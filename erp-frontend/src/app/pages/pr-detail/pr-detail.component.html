@@ -1,0 +1,211 @@
+<div class="page-container" *ngIf="pr">
+  <div class="header-section">
+    <div class="header-content">
+      <div class="title-group">
+        <button class="custom-back-btn" routerLink="/admin/purchase-requests" title="Back to PR List">
+          <div class="back-icon-circle">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </div>
+          <span class="back-text">Back to List</span>
+        </button>
+        <h1 class="page-title">PR Details: {{ pr.pr_no }}</h1>
+        <p class="page-subtitle">Detailed view and management of procurement request.</p>
+      </div>
+      <div class="header-actions">
+        <span class="status-badge" [ngClass]="pr.status.toLowerCase()">{{ pr.status }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="details-grid">
+    <div class="info-card main-info">
+      <div class="card-header">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+        </svg>
+        <h3>General Information</h3>
+      </div>
+      <div class="info-body">
+        <div class="info-row">
+          <span class="label">Project:</span>
+          <span class="value">{{ pr.Project?.project_name || 'N/A' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Project Code:</span>
+          <span class="value">{{ pr.Project?.project_code || 'N/A' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Date Created:</span>
+          <span class="value">{{ pr.created_at | date:'mediumDate' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-card user-info">
+      <div class="card-header">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+        </svg>
+        <h3>Requested By</h3>
+      </div>
+      <div class="info-body">
+        <div class="info-row">
+          <span class="label">Name:</span>
+          <span class="value">{{ pr.Requester?.name }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Department:</span>
+          <span class="value">{{ pr.department }}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Designation:</span>
+          <span class="value">{{ pr.designation }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="items-section">
+    <div class="section-header">
+      <h3>Requested Items</h3>
+      <span class="item-count">{{ pr.PurchaseRequestItems?.length || 0 }} Items</span>
+    </div>
+    
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th width="50">SL</th>
+            <th width="120">ITEM CODE</th>
+            <th>ITEM DETAILS</th>
+            <th width="80">QTY</th>
+            <th width="80">UOM</th>
+            <th width="100">STOCK</th>
+            <th width="110">PRICE</th>
+            <th width="80">TAX%</th>
+            <th width="130">TOTAL (INC. TAX)</th>
+            <th>LINKS/REMARKS</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of paginatedItems; let i = index">
+            <td>{{ getGlobalIndex(i) + 1 }}</td>
+            <td class="item-code">{{ item.Item?.item_code || item.custom_item_code || '---' }}</td>
+            <td>
+              <div class="item-name">{{ item.Item?.item_name || item.custom_item_name }}</div>
+              <div class="item-desc" *ngIf="item.Item?.description">{{ item.Item?.description }}</div>
+            </td>
+            <td class="qty-cell">{{ item.quantity | number:'1.2-2' }}</td>
+            <td>{{ item.uom }}</td>
+            <td>
+              <span class="stock-badge" [class.stock-low]="(item.Item?.Stock?.quantity || 0) <= 0">
+                {{ (item.Item?.Stock?.quantity > 0 ? item.Item.Stock.quantity : 0) | number:'1.0-0' }}
+              </span>
+            </td>
+            <td class="price-cell">
+              <span class="price-val">₹{{ (item.unit_price || 0) | number:'1.2-2' }}</span>
+            </td>
+            <td>{{ (item.tax_percent || 0) }}%</td>
+            <td class="total-val">₹{{ (item.total_price || 0) | number:'1.2-2' }}</td>
+            <td class="remarks-cell">{{ item.links_remarks_contact || '---' }}</td>
+          </tr>
+          <tr *ngIf="!pr.PurchaseRequestItems || pr.PurchaseRequestItems.length === 0">
+            <td colspan="10" class="empty-row">No items found for this request.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination Footer -->
+    <div class="pagination-footer" *ngIf="totalPages > 1">
+      <span class="pagination-info">Showing page {{ currentPage }} of {{ totalPages }} ({{ pr.PurchaseRequestItems.length }} total items)</span>
+      <div class="pagination-btns">
+        <button class="btn-pager" (click)="prevPage()" [disabled]="currentPage === 1">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          Previous
+        </button>
+        <button class="btn-pager" (click)="nextPage()" [disabled]="currentPage === totalPages">
+          Next
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="9 18 15 12 9 6" transform="rotate(180 12 12)"></polyline>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="remarks-section" *ngIf="pr && pr.remarks">
+    <h3>Remarks</h3>
+    <div class="remarks-box">{{ pr.remarks }}</div>
+  </div>
+
+  <!-- APPROVAL SECTION -->
+  <div class="approval-outer-container" *ngIf="pr && pr.status === 'Submitted' && canApprove">
+    <div class="approval-card-modern">
+      <div class="approval-header">
+        <div class="icon-wrap">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M20 6L9 17L4 12"></path>
+          </svg>
+        </div>
+        <div class="text-content">
+          <h4>Purchase Review</h4>
+          <p>Please verify the items and requirements before approving for procurement.</p>
+        </div>
+      </div>
+      
+      <div class="approval-form">
+        <label class="check-wrapper">
+          <input type="checkbox" [(ngModel)]="pr.managerApproved" [disabled]="submittingFinal">
+          <div class="custom-check">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3.5">
+              <path d="M20 6L9 17L4 12"></path>
+            </svg>
+          </div>
+          <span class="label-text">I have reviewed and hereby approve this PR for further processing.</span>
+        </label>
+        
+        <div class="approval-btns">
+          <button class="btn-reject" (click)="onStatusChange('Rejected')" [disabled]="submittingFinal">
+            Reject Request
+          </button>
+          <button class="btn-approve" (click)="onApprove()" [disabled]="!pr.managerApproved || submittingFinal">
+            <span *ngIf="!submittingFinal">Confirm Approval</span>
+            <span *ngIf="submittingFinal">Processing...</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="loading-overlay" *ngIf="loading">
+  <div class="spinner"></div>
+  <p>Loading PR Details...</p>
+</div>
+
+<!-- Custom Confirmation Modal -->
+<div class="modal-overlay" *ngIf="showConfirmModal">
+  <div class="modal-card confirm-modal">
+    <div class="modal-icon" [class.danger]="confirmConfig.type === 'danger'">
+      <svg *ngIf="confirmConfig.type === 'primary'" viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>
+      <svg *ngIf="confirmConfig.type === 'danger'" viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+    </div>
+    <h3>{{ confirmConfig.title }}</h3>
+    <p>{{ confirmConfig.message }}</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" (click)="showConfirmModal = false">{{ confirmConfig.cancelText }}</button>
+      <button class="btn-confirm" [class.btn-danger]="confirmConfig.type === 'danger'" (click)="executeConfirm()">
+        {{ confirmConfig.confirmText }}
+      </button>
+    </div>
+  </div>
+</div>

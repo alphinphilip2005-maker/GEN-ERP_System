@@ -1,0 +1,41 @@
+<h2>Permissions & Data Control</h2>
+<p class="subtitle">Defining who can access and what is required.</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">Department Access</div>
+    <div class="mockup-body" style="padding: 20px;">
+      <div class="options" data-multiselect>
+        <div class="option" data-choice="finance" onclick="toggleSelect(this)">
+          <div class="letter">F</div>
+          <div class="content"><h3>Finance / Accounts</h3><p>Full Management</p></div>
+        </div>
+        <div class="option" data-choice="purchase" onclick="toggleSelect(this)">
+          <div class="letter">P</div>
+          <div class="content"><h3>Purchase Dept</h3><p>View-Only History</p></div>
+        </div>
+        <div class="option" data-choice="admin" onclick="toggleSelect(this)">
+          <div class="letter">A</div>
+          <div class="content"><h3>Admin</h3><p>Full Management</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">Mandatory Fields Entry</div>
+    <div class="mockup-body" style="padding: 20px;">
+       <p style="font-size: 13px; color: #475569; margin-bottom: 15px;">Since POs are automatically added, when should <b>Due Date</b> and <b>Settlement Type</b> be set?</p>
+       <div class="options">
+         <div class="option" data-choice="inline" onclick="toggleSelect(this)">
+           <div class="letter">1</div>
+           <div class="content"><h3>Inline Edit</h3><p>Finance sets them directly in the list table (as shown in your screenshot).</p></div>
+         </div>
+         <div class="option" data-choice="po" onclick="toggleSelect(this)">
+           <div class="letter">2</div>
+           <div class="content"><h3>PO Level</h3><p>These fields must be filled during Purchase Order creation/approval.</p></div>
+         </div>
+       </div>
+    </div>
+  </div>
+</div>

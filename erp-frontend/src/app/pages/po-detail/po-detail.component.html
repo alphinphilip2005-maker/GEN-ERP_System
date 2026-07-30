@@ -1,0 +1,249 @@
+<!-- Custom Toast Notification -->
+<div class="toast-container" *ngIf="toastMessage" [ngClass]="toastType">
+  <div class="toast-content">
+    <svg *ngIf="toastType === 'success'" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+    <svg *ngIf="toastType === 'error'" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span>{{ toastMessage }}</span>
+  </div>
+  <button class="toast-close" (click)="toastMessage = null">&times;</button>
+</div>
+
+<div class="page-wrapper">
+  <!-- Loading State -->
+  <div class="loader-container" *ngIf="loading">
+    <div class="premium-loader"></div>
+    <p>Loading Purchase Order Details...</p>
+  </div>
+  
+
+  <div class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Order Items & Reception</h1>
+      <p class="page-subtitle">Track designated items for Purchase Order {{ po ? po.po_no : '...' }}</p>
+    </div>
+    <div class="header-right" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
+      <button class="btn btn-outline" [routerLink]="['/admin/po']" [queryParams]="po.project_name ? { project: po.project_name } : {}" style="height: 48px; display: inline-flex; align-items: center; box-sizing: border-box;">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;"><polyline points="15 18 9 12 15 6"/></svg> Back to Target Orders
+      </button>
+
+      <button class="btn btn-outline" (click)="printInvoice()" style="background: #e2e8f0; color: #1e293b; border: none; height: 48px; display: inline-flex; align-items: center; box-sizing: border-box;">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Print PO
+      </button>
+
+      <!-- Approval Status Badge at Top -->
+      <div *ngIf="po && po.is_approved" class="approval-badge-top" style="margin-right: 0; height: 48px; display: inline-flex; align-items: center; box-sizing: border-box;">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" style="margin-right: 6px;"><polyline points="20 6 9 17 4 12"/></svg>
+        APPROVED BY {{ $any(po.PurchaseManager)?.name || 'admin' | uppercase }}
+      </div>
+
+      <!-- PO Reception Controls (Refactored to Dropdown) -->
+      <div *ngIf="po && canReceive() && po.status !== 'OPEN'" class="po-reception-controls" style="display: flex; flex-direction: row; gap: 10px; align-items: center;">
+        
+        <div style="display: flex; align-items: center; gap: 8px; background: #f1f5f9; padding: 5px 10px; border-radius: 8px; border: 1px solid #cbd5e1;">
+          <select class="form-control" 
+                  [(ngModel)]="receptionStatusSelection" 
+                  [disabled]="!editReceptionMode && (isFullyReceived() || isPartiallyReceived())"
+                  style="height: 38px; border-radius: 6px; font-weight: 600; min-width: 220px; font-size: 14px; cursor: pointer;">
+            <option value="" disabled selected>Select Shipment Status</option>
+            <option value="PARTIAL">Shipment Partially Received</option>
+            <option value="FULLY">Shipment Fully Received</option>
+          </select>
+
+          <!-- Confirm Tick Button -->
+          <button class="btn-icon-confirm" 
+                  (click)="confirmReception()"
+                  [disabled]="!receptionStatusSelection || (!editReceptionMode && (isFullyReceived() || isPartiallyReceived())) || updating"
+                  title="Confirm Shipment Status"
+                  style="padding: 8px; display: flex; align-items: center; justify-content: center; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer; transition: all 0.2s;"
+                  [style.opacity]="(!receptionStatusSelection || (!editReceptionMode && (isFullyReceived() || isPartiallyReceived())) || updating) ? '0.5' : '1'"
+                  [style.cursor]="(!receptionStatusSelection || (!editReceptionMode && (isFullyReceived() || isPartiallyReceived())) || updating) ? 'not-allowed' : 'pointer'">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          </button>
+
+          <!-- Edit Icon Button -->
+          <button class="btn-icon-edit" 
+                  (click)="toggleReceptionEdit()"
+                  *ngIf="(isFullyReceived() || isPartiallyReceived()) && !shouldShowReturnBox"
+                  title="Edit Shipment Status"
+                  style="padding: 8px; display: flex; align-items: center; justify-content: center; background: #f59e0b; color: white; border: none; border-radius: 6px; cursor: pointer;">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+          </button>
+        </div>
+
+      </div>
+
+      <button *ngIf="po && po.status === 'OPEN' && canSendToVendor()" class="btn btn-primary" (click)="sendToVendor()" [disabled]="updating || !po.is_approved" [title]="!po.is_approved ? 'Approval Required before sending to Vendor' : ''" style="background:#3b82f6; border:none; height: 48px; display: inline-flex; align-items: center; box-sizing: border-box;">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 6px;"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        Send to Vendor
+      </button>
+
+      <!-- SINGLE RETURN CONFIRMATION CONTROLS (Refactored to Dropdown) -->
+      <div *ngIf="shouldShowReturnBox && canReceive()" style="display: flex; align-items: center; gap: 10px; margin-left: 10px;">
+        
+        <div [style.background]="isReturnBoxChecked ? '#f0fdf4' : '#fef2f2'" 
+             [style.border-color]="isReturnBoxChecked ? '#86efac' : '#fca5a5'"
+             style="display: flex; align-items: center; gap: 8px; padding: 5px 10px; border-radius: 8px; border: 1px solid;" 
+             [title]="(isReturnBoxChecked ? 'Returnables Handled (' : 'Pending Returnables (') + pendingReturnableRejections.length + ')'">
+          
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <select class="form-control" 
+                    [(ngModel)]="returnStatusSelection" 
+                    [disabled]="!editReturnMode && isReturnBoxChecked"
+                    [style.color]="isReturnBoxChecked ? '#166534' : '#991b1b'"
+                    [style.border-color]="isReturnBoxChecked ? '#86efac' : '#fca5a5'"
+                    style="height: 38px; border-radius: 6px; font-weight: 700; min-width: 220px; font-size: 13px; cursor: pointer; background: white;">
+              <option value="PENDING">Pending Returned Receipt</option>
+              <option value="RECEIVED">Returned Shipment Received</option>
+            </select>
+            <small [style.color]="isReturnBoxChecked ? '#15803d' : '#b91c1c'" style="font-size: 10px; font-weight: 700; margin-left: 2px;">
+              {{ isReturnBoxChecked ? 'Returnables Handled' : 'Pending Returnables' }} ({{ pendingReturnableRejections.length }})
+            </small>
+          </div>
+
+          <!-- Confirm Tick Button -->
+          <button class="btn-icon-confirm" 
+                  (click)="confirmReturnReception()"
+                  [disabled]="(!editReturnMode && isReturnBoxChecked) || updating || ((returnStatusSelection === 'RECEIVED' && isReturnBoxChecked) || (returnStatusSelection === 'PENDING' && !isReturnBoxChecked))"
+                  title="Confirm Return Status"
+                  [style.background]="isReturnBoxChecked ? '#22c55e' : '#ef4444'"
+                  style="padding: 8px; height: 38px; display: flex; align-items: center; justify-content: center; color: white; border: none; border-radius: 6px; cursor: pointer; transition: all 0.2s;"
+                  [style.opacity]="((!editReturnMode && isReturnBoxChecked) || updating || ((returnStatusSelection === 'RECEIVED' && isReturnBoxChecked) || (returnStatusSelection === 'PENDING' && !isReturnBoxChecked))) ? '0.5' : '1'"
+                  [style.cursor]="((!editReturnMode && isReturnBoxChecked) || updating || ((returnStatusSelection === 'RECEIVED' && isReturnBoxChecked) || (returnStatusSelection === 'PENDING' && !isReturnBoxChecked))) ? 'not-allowed' : 'pointer'">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          </button>
+
+          <!-- Edit Icon Button -->
+          <button class="btn-icon-edit" 
+                  (click)="toggleReturnEdit()"
+                  *ngIf="isReturnBoxChecked && canUndo"
+                  title="Edit Return Status"
+                  style="padding: 8px; height: 38px; display: flex; align-items: center; justify-content: center; background: #f59e0b; color: white; border: none; border-radius: 6px; cursor: pointer;">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="alert-error" *ngIf="error">{{ error }}</div>
+
+  <div class="empty-state-card" *ngIf="!loading && !error && !po">
+    <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#cbd5e1" stroke-width="1.5">
+      <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline>
+    </svg>
+    <h3>Purchase Order Not Found</h3>
+    <p>We couldn't retrieve the details for this order. It might have been deleted or the ID is invalid.</p>
+    <button class="btn btn-primary" routerLink="/admin/po">Back to List</button>
+  </div>
+
+  <div class="invoice-wrapper" *ngIf="!loading && !error && po">
+    <!-- Invoice Header -->
+    <div class="invoice-header-banner">
+      <div class="logo-area">
+        <img src="assets/images/genrobotics_logo.png" alt="GENROBOTICS" style="height: 50px;">
+      </div>
+      
+      <div style="text-align: center;">
+        <h1>PURCHASE ORDER</h1>
+      </div>
+
+      <div class="company-details">
+        <strong>Genrobotic Innovations Pvt Ltd</strong><br>
+        4th Floor, CDAC Building<br>
+        Technopark, Thiruvananthapuram<br>
+        India 695581
+      </div>
+    </div>
+
+    <!-- Details Section -->
+    <div class="invoice-party-row">
+      <div class="party-block">
+        <h3>Vendor Details</h3>
+        <div style="font-size: 16px; font-weight: 700; color: #1c1c1c; margin-bottom: 5px;">{{ po.ToVendor?.name }}</div>
+        <div style="color: #475569; font-size: 13px; margin-bottom: 15px; line-height: 1.5;">
+          {{ po.ToVendor?.street || 'No Address Provided' }}<br>
+          Vendor Code: {{ po.ToVendor?.vendor_code }}
+        </div>
+
+      </div>
+
+      <div class="party-block">
+        <h3>Order Information</h3>
+        <div class="meta-grid">
+          <span class="meta-label">Purchase Order#</span>
+          <span class="meta-val">{{ po.po_no }}</span>
+
+          <span class="meta-label">Date</span>
+          <span class="meta-val">{{ po.po_date | date:'dd/MM/yyyy' }}</span>
+
+
+
+          <span class="meta-label">Project Name</span>
+          <span class="meta-val">{{ po.project_name || 'N/A' }}</span>
+
+          <span class="meta-label">Status</span>
+          <span class="meta-val">
+            <span class="status-pill" [ngClass]="getStatusColor(po.status)" style="padding: 2px 8px; font-size: 10px;">{{ po.status }}</span>
+          </span>
+
+          <span class="meta-label" *ngIf="po?.warehouse">Shipping Address</span>
+          <span class="meta-val" *ngIf="po?.warehouse" style="line-height: 1.5; font-size: 12px; color: #1e293b; max-width: 320px; display: inline-block;">
+            <div style="display: flex; align-items: flex-start; gap: 6px;">
+              <span class="warehouse-badge" style="flex-shrink: 0; margin-top: 2px;">
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:2px;">
+                  <rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+                </svg>
+                {{ po.warehouse }}
+              </span>
+              <span style="font-weight: 500;">{{ getWarehouseAddress(po.warehouse) }}</span>
+            </div>
+          </span>
+        </div>
+      </div>
+    </div>
+    <table class="data-table mt-4">
+      <thead>
+        <tr>
+          <th>Item Code</th>
+          <th>Item Name</th>
+          <th>Description</th>
+          <th>Material Group (Category)</th>
+          <th>Quantity & UOM</th>
+          <th>Amount Assigned (₹)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let itemLine of po?.Items">
+          <td><strong *ngIf="itemLine.Item?.item_code">{{ itemLine.Item?.item_code }}</strong><span class="badge badge-grey" *ngIf="!itemLine.Item?.item_code">EXTERNAL</span></td>
+          <td><strong>{{ itemLine.Item?.item_name || itemLine.custom_item_name }}</strong></td>
+          <td style="max-width: 250px;">{{ itemLine.Item?.description || 'External Item' }}</td>
+          <td>{{ itemLine.Item?.category }}</td>
+          <td>{{ itemLine.quantity }} <small>{{ itemLine.uom }}</small></td>
+          <td style="font-family: monospace;">₹{{ itemLine.amount | number:'1.2-2' }}</td>
+        </tr>
+        <tr *ngIf="!po?.Items || po?.Items?.length === 0">
+          <td colspan="6" style="text-align: center; padding: 30px;">
+            No items populated for this order. Reference PR generation.
+          </td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="5" style="text-align: right; border-bottom: none; font-weight: 600; font-size: 15px;">Total</td>
+          <td style="font-weight: 700; color: #1e3a8a; border-bottom: none; font-size: 15px;">{{ getSubTotal() | currency:'INR':'symbol':'1.2-2' }}</td>
+        </tr>
+      </tfoot>
+    </table>
+
+
+
+  </div>
+</div>

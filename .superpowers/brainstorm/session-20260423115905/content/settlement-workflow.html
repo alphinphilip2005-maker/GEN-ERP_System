@@ -1,0 +1,69 @@
+<h2>Settlement Interaction</h2>
+<p class="subtitle">What happens when you click "Settle"?</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">Settlement Modal</div>
+    <div class="mockup-body" style="padding: 20px;">
+      <div class="section">
+        <label class="label">Amount to Pay</label>
+        <input class="mock-input" value="10000" style="width: 100%;">
+        <p style="font-size: 11px; color: #64748b; margin-top: 5px;">Pending: ₹40,000</p>
+      </div>
+      
+      <div class="section">
+        <label class="label">Payment Mode</label>
+        <select class="mock-input" style="width: 100%; height: 35px; background: #fff;">
+          <option>Bank Transfer</option>
+          <option>Cash</option>
+          <option>Check</option>
+          <option>UPI</option>
+        </select>
+      </div>
+
+      <div class="section">
+        <label class="label">Reference No (Txn ID / Check #)</label>
+        <input class="mock-input" placeholder="TRX123456" style="width: 100%;">
+      </div>
+
+      <button class="mock-button" style="width: 100%; background: #3b82f6; color: white;">Confirm Payment</button>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">Payment History (View Details)</div>
+    <div class="mockup-body" style="padding: 15px;">
+       <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+         <thead>
+           <tr style="border-bottom: 1px solid #e2e8f0; color: #64748b;">
+             <th style="text-align: left; padding: 8px;">Date</th>
+             <th style="text-align: left; padding: 8px;">Mode</th>
+             <th style="text-align: right; padding: 8px;">Amount</th>
+           </tr>
+         </thead>
+         <tbody>
+           <tr style="border-bottom: 1px solid #f1f5f9;">
+             <td style="padding: 8px;">22/04/2026</td>
+             <td style="padding: 8px;">Bank</td>
+             <td style="text-align: right; padding: 8px;">₹5,000</td>
+           </tr>
+           <tr style="border-bottom: 1px solid #f1f5f9;">
+             <td style="padding: 8px;">23/04/2026</td>
+             <td style="padding: 8px;">Cash</td>
+             <td style="text-align: right; padding: 8px;">₹2,000</td>
+           </tr>
+         </tbody>
+         <tfoot>
+           <tr>
+             <td colspan="2" style="padding: 8px; font-weight: 700;">Total Paid</td>
+             <td style="text-align: right; padding: 8px; font-weight: 700;">₹7,000</td>
+           </tr>
+         </tfoot>
+       </table>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 20px;">
+  <p>Does this capture the "History" and "Settle" workflow you envision?</p>
+</div>

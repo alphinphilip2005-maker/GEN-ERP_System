@@ -1,0 +1,185 @@
+<div class="page-wrapper" style="background-color: transparent;">
+  <!-- Mockup Topbar Match -->
+  <div class="list-top-bar">
+    <div class="left-section">
+      <h1 class="page-title" style="color: #1e3a8a;">Purchase Order</h1>
+    </div>
+    <div class="right-section" style="display: flex; gap: 15px; align-items: center;">
+    <button class="btn btn-primary" routerLink="/admin/po/create" style="border-radius: 4px; height: 38px; padding: 0 20px; display: flex; align-items: center; gap: 8px; font-weight: 600;" *ngIf="activeProject && canCreate">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 2px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Create New PO
+    </button>
+      <div class="search-box" style="position: relative; display: flex; align-items: center;">
+        <input type="text" placeholder="Search by code / item" class="form-control" 
+          [(ngModel)]="searchQuery"
+          style="background: #f1f5f9; border-radius: 4px; padding-right: 40px; border: 1px solid #cbd5e1; height: 38px;">
+        <button style="position: absolute; right: 0; top: 0; bottom: 0; background: #3b82f6; border: none; color: white; padding: 0 12px; border-radius: 0 4px 4px 0; cursor: pointer;">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+      </div>
+      <button *ngIf="activeProject" class="filter-btn" (click)="toggleFilterPanel()" [class.active]="showFilterPanel" style="background: none; border: 1px solid #cbd5e1; padding: 6px 10px; border-radius: 4px; cursor: pointer; color: #64748b;">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Dynamic Filter Panel -->
+  <div class="filter-panel" *ngIf="showFilterPanel">
+    <div class="filter-grid">
+      <div class="filter-item">
+        <label>Status</label>
+        <select class="form-control" [(ngModel)]="filterStatus">
+          <option value="">All Statuses</option>
+          <option *ngFor="let opt of statusOptions" [value]="opt">{{ opt }}</option>
+        </select>
+      </div>
+      <div class="filter-item">
+        <label>Review</label>
+        <select class="form-control" [(ngModel)]="filterReview">
+          <option value="">All Review States</option>
+          <option value="APPROVED">APPROVED</option>
+          <option value="PENDING">PENDING</option>
+        </select>
+      </div>
+      <div class="filter-item">
+        <label>Date</label>
+        <input type="date" class="form-control" [(ngModel)]="filterDate">
+      </div>
+      <div class="filter-actions">
+        <button class="btn btn-ghost" (click)="resetFilters()" style="color: #ef4444;">Clear</button>
+        <button class="btn btn-primary" (click)="showFilterPanel = false">Close</button>
+      </div>
+    </div>
+  </div>
+  
+  <div style="width: 100%; height: 2px; background: #3b82f6; margin-bottom: 25px;"></div>
+
+  <div class="alert-error" *ngIf="error">{{ error }}</div>
+  
+  <!-- TIER 1: Project Cards -->
+  <div *ngIf="!loading && !error && !activeProject">
+    <div style="margin-bottom:20px;">
+      <h2 style="font-size:15px; font-weight:700; color:#1e293b; margin-bottom:4px;">Select Project</h2>
+      <p style="font-size:13px; color:#64748b; margin:0;">Choose a project to view and manage its purchase orders.</p>
+    </div>
+    <div class="project-grid">
+      <div *ngFor="let proj of filteredProjects"
+           class="project-card-rich"
+           (click)="selectProject(proj.project_name)">
+        <!-- Icon -->
+        <div class="proj-card-top">
+          <div class="proj-icon-box">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="white" stroke-width="2">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+            </svg>
+          </div>
+          <div class="proj-card-info">
+            <span class="proj-card-name">{{ proj.project_name }}</span>
+            <span class="proj-card-code">Project Code &nbsp; <strong>{{ proj.project_code }}</strong></span>
+          </div>
+          <span class="proj-po-badge">{{ getPoCount(proj.project_name) }} POs</span>
+        </div>
+        <div class="proj-card-footer">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#94a3b8" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>
+      <div *ngIf="filteredProjects.length === 0" style="grid-column:1/-1; text-align:center; padding:40px; color:#64748b;">
+        No Projects found matching your search.
+      </div>
+    </div>
+  </div>
+
+  <!-- TIER 2: PO Cards Level -->
+  <div class="po-group-view" *ngIf="!loading && !error && activeProject">
+    <div class="group-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+      <h2 style="color: #1e3a8a; font-size: 18px; margin: 0; display:flex; align-items:center; gap: 8px;">
+        <button class="btn btn-ghost" (click)="selectProject(null); resetFilters()" style="padding:4px; height:auto;">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        {{ activeProject }}
+      </h2>
+      <!-- PO Pagination (Moved to Top) -->
+      <div *ngIf="totalPages > 1" class="pagination-controls" style="display: flex; align-items: center; gap: 15px;">
+        <button class="btn btn-outline" style="padding: 4px 12px; font-weight: 500; height: 32px;" (click)="prevPage()" [disabled]="currentPage === 1">&lt;</button>
+        <span style="font-size: 12px; font-weight: 600; color: #475569;">Page {{ currentPage }} of {{ totalPages }}</span>
+        <button class="btn btn-outline" style="padding: 4px 12px; font-weight: 500; height: 32px;" (click)="nextPage()" [disabled]="currentPage === totalPages">&gt;</button>
+      </div>
+    </div>
+
+    <div class="po-grid">
+      <!-- Card Loop -->
+      <div *ngFor="let order of paginatedOrders" class="po-card white-card">
+        <div class="card-pill aging-pill" [ngClass]="getAgeColor(order)">
+          Aging : {{ getAgeDays(order) }} days
+        </div>
+        
+        <div class="po-info-row" style="margin-top: 45px;">
+          <span class="info-label">PO No</span>
+          <span class="info-colon">:</span>
+          <span class="info-value po-no" [title]="order.po_no">{{ order.po_no }}</span>
+        </div>
+        <div class="po-info-row" *ngIf="order.ToVendor?.name">
+          <span class="info-label">Vendor</span>
+          <span class="info-colon">:</span>
+          <span class="info-value" style="font-weight: 700; color: #334155;" [title]="order.ToVendor.name">{{ order.ToVendor.name }}</span>
+        </div>
+        <div class="po-info-row">
+          <span class="info-label">Date</span>
+          <span class="info-colon">:</span>
+          <span class="info-value">{{ order.po_date | date:'dd/MM/yyyy' }}</span>
+        </div>
+        <div class="po-info-row" style="align-items: center;">
+          <span class="info-label">Status</span>
+          <span class="info-colon">:</span>
+          <span class="info-value"><span class="status-pill" [ngClass]="getStatusColor(order)">{{ getStatusLabel(order) }}</span></span>
+        </div>
+        <div class="po-info-row" style="align-items: center; margin-top: 4px;">
+          <span class="info-label">Review</span>
+          <span class="info-colon">:</span>
+          <span class="info-value">
+            <span *ngIf="order.is_approved" style="color: #16a34a; font-weight: 700; font-size: 11px; display: flex; align-items: center; gap: 4px; text-transform: uppercase;">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+              APPROVED BY {{ getApproverName(order) }}
+            </span>
+            <span *ngIf="!order.is_approved" style="color: #64748b; font-weight: 500; font-size: 11px; text-transform: uppercase;">PENDING</span>
+          </span>
+        </div>
+        <div class="po-info-row" style="align-items: center; margin-top: 4px;" *ngIf="order.warehouse">
+          <span class="info-label">Warehouse</span>
+          <span class="info-colon">:</span>
+          <span class="info-value" style="font-weight: 600; color: #475569; font-size: 11px; text-transform: uppercase; display: flex; align-items: center; gap: 4px;">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+            </svg>
+            {{ order.warehouse }}
+          </span>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="card-actions">
+          <button *ngIf="canEdit" class="action-btn edit-btn" title="Edit PO" (click)="editPO($event, order.id!)">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+          </button>
+          <button class="action-btn view-btn" title="View Details" (click)="viewPO($event, order.id!)">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+          <button *ngIf="canDelete" class="action-btn delete-btn" title="Delete PO" (click)="deletePO($event, order)">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+              <path d="M10 11v6M14 11v6"/>
+              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+
+  </div>
+</div>

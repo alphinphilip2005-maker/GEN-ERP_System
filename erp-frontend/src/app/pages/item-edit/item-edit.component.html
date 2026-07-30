@@ -1,0 +1,88 @@
+<div class="page-wrapper">
+  <div class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Edit Item</h1>
+      <p class="page-subtitle">Update item details, specifications, and branding.</p>
+    </div>
+    <div class="header-right">
+      <button class="btn btn-outline" routerLink="/admin/items">
+        Back to Items
+      </button>
+    </div>
+  </div>
+
+  <div class="alert-success" *ngIf="success">{{ success }}</div>
+  <div class="alert-error" *ngIf="error">{{ error }}</div>
+
+  <div class="loading-state" *ngIf="loading && !error">
+    <p>Loading item details...</p>
+  </div>
+
+  <div class="card" *ngIf="!loading || error">
+    <div class="card-header">
+      <h3>Item Information</h3>
+    </div>
+    <form (ngSubmit)="onSubmit()" #itemForm="ngForm" class="form-content">
+      <div class="form-group-row">
+        <div class="form-group">
+          <label class="form-label">Item Code <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" name="item_code" [(ngModel)]="item.item_code" (blur)="checkCode()" placeholder="e.g. RM-1001" required>
+          <div class="text-danger small mt-1" *ngIf="codeExists">
+            Duplicate Item Code found in the system.
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Item Name <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" name="item_name" [(ngModel)]="item.item_name" placeholder="e.g. Aluminum Sheet" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Item Specification</label>
+        <textarea class="form-control" name="description" [(ngModel)]="item.description" rows="3" placeholder="Enter item specifications..."></textarea>
+      </div>
+
+      <div class="form-group-row">
+        <div class="form-group">
+          <label class="form-label">Category <span class="text-danger">*</span></label>
+          <div class="select-wrapper">
+            <select class="form-control" name="category" [(ngModel)]="item.category" required>
+              <option value="" disabled>Select Category</option>
+              <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+            </select>
+            <svg class="select-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">UOM <span class="text-danger">*</span></label>
+          <div class="select-wrapper">
+            <select class="form-control" name="uom" [(ngModel)]="item.uom" required>
+              <option value="" disabled>Select UOM</option>
+              <option *ngFor="let uom of uoms" [value]="uom">{{ uom }}</option>
+            </select>
+            <svg class="select-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group-row">
+        <div class="form-group">
+          <label class="form-label">Material Type</label>
+          <input type="text" class="form-control" name="material" [(ngModel)]="item.material" placeholder="e.g. MS, SS, Aluminum">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Brand</label>
+          <input type="text" class="form-control" name="brand" [(ngModel)]="item.brand" placeholder="e.g. Tata, Reliance">
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-outline" routerLink="/admin/items">Cancel</button>
+        <button type="submit" class="btn btn-primary" [disabled]="!itemForm.valid || submitting || codeExists">
+          <span *ngIf="!submitting">Update Item</span>
+          <span *ngIf="submitting">Updating...</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

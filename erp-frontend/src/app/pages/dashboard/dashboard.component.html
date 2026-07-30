@@ -1,0 +1,404 @@
+<div class="page-wrapper">
+
+  <!-- Welcome Banner (Shared) -->
+  <div class="welcome-banner">
+    <div class="welcome-content">
+      <h1 class="welcome-title">{{ getGreeting() }}, {{ currentUser?.name || 'Admin' }}! 👋</h1>
+      <p class="welcome-sub">Here's what's happening in your ERP system today.</p>
+    </div>
+    <div class="welcome-date">
+      <span class="date-text">{{ today | date:'EEEE, MMMM d, y' }}</span>
+    </div>
+  </div>
+
+  <!-- Administrator Aggregate View -->
+  <ng-container
+    *ngIf="!isRnDUser && !isQualityUser && !isProductionUser && !isStoreUser && !isPurchaseUser && !isFinanceUser && !isOmUser">
+    <div class="dashboard-main-content">
+      <div class="admin-charts-grid">
+        <!-- PR Status -->
+        <div class="chart-card-premium">
+          <h3 class="chart-label-top pr-color">PR Status</h3>
+          <div class="chart-layout-inner">
+            <div class="donut-wrap-sm">
+              <div class="donut-base" [style.background]="prDonutStyle"></div>
+              <div class="donut-hole">
+                <span class="center-val">{{ prStats.open + prStats.approved + prStats.rejected }}</span>
+              </div>
+            </div>
+            <div class="legend-side">
+              <div class="legend-row"><span class="dot-sm amber"></span> <span class="lbl">Open</span> <span
+                  class="val">{{ prStats.open }}</span></div>
+              <div class="legend-row"><span class="dot-sm green"></span> <span class="lbl">Approved</span> <span
+                  class="val">{{ prStats.approved }}</span></div>
+              <div class="legend-row"><span class="dot-sm red"></span> <span class="lbl">Rejected</span> <span
+                  class="val">{{ prStats.rejected }}</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PO Status -->
+        <div class="chart-card-premium">
+          <h3 class="chart-label-top po-color">PO Status</h3>
+          <div class="chart-layout-inner">
+            <div class="donut-wrap-sm">
+              <div class="donut-base" [style.background]="poDonutStyle"></div>
+              <div class="donut-hole">
+                <span class="center-val">{{ poStats.open + poStats.approved }}</span>
+              </div>
+            </div>
+            <div class="legend-side">
+              <div class="legend-row"><span class="dot-sm amber"></span> <span class="lbl">Open</span> <span
+                  class="val">{{ poStats.open }}</span></div>
+              <div class="legend-row"><span class="dot-sm green"></span> <span class="lbl">Approved</span> <span
+                  class="val">{{ poStats.approved }}</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MRN Status -->
+        <div class="chart-card-premium">
+          <h3 class="chart-label-top mrn-color">MRN Status</h3>
+          <div class="chart-layout-inner">
+            <div class="donut-wrap-sm">
+              <div class="donut-base" [style.background]="mrnDonutStyle"></div>
+              <div class="donut-hole">
+                <span class="center-val">{{ mrnStats.open + mrnStats.closed + mrnStats.overdue }}</span>
+              </div>
+            </div>
+            <div class="legend-side">
+              <div class="legend-row"><span class="dot-sm dark-blue"></span> <span class="lbl">Pending</span> <span
+                  class="val">{{ mrnStats.open }}</span></div>
+              <div class="legend-row"><span class="dot-sm cyan"></span> <span class="lbl">Approved</span> <span
+                  class="val">{{ mrnStats.closed }}</span></div>
+              <div class="legend-row"><span class="dot-sm light-blue"></span> <span class="lbl">Issued</span> <span
+                  class="val">{{ mrnStats.overdue }}</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- GRN Status -->
+        <div class="chart-card-premium">
+          <h3 class="chart-label-top grn-color">GRN Status</h3>
+          <div class="chart-layout-inner">
+            <div class="donut-wrap-sm">
+              <div class="donut-base" [style.background]="grnDonutStyle"></div>
+              <div class="donut-hole">
+                <span class="center-val">{{ grnStats.pending + grnStats.completed }}</span>
+              </div>
+            </div>
+            <div class="legend-side">
+              <div class="legend-row"><span class="dot-sm dark-blue"></span> <span class="lbl">Fully Received</span>
+                <span class="val">{{ grnStats.pending }}</span></div>
+              <div class="legend-row"><span class="dot-sm cyan"></span> <span class="lbl">Partial Received</span> <span
+                  class="val">{{ grnStats.completed }}</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- IQC Status -->
+        <div class="chart-card-premium">
+          <h3 class="chart-label-top iqc-color">IQC Status</h3>
+          <div class="chart-layout-inner">
+            <div class="donut-wrap-sm">
+              <div class="donut-base" [style.background]="iqcDonutStyle"></div>
+              <div class="donut-hole">
+                <span class="center-val">{{ iqcStats.pending + iqcStats.partial + iqcStats.completed }}</span>
+              </div>
+            </div>
+            <div class="legend-side">
+              <div class="legend-row"><span class="dot-sm indigo"></span> <span class="lbl">QC Pending</span> <span
+                  class="val">{{ iqcStats.pending }}</span></div>
+              <div class="legend-row"><span class="dot-sm violet"></span> <span class="lbl">Partially Inspected</span>
+                <span class="val">{{ iqcStats.partial }}</span></div>
+              <div class="legend-row"><span class="dot-sm sky"></span> <span class="lbl">Fully Inspected</span> <span
+                  class="val">{{ iqcStats.completed }}</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      
+      <!-- PR Tracking Section for Admin -->
+      <div class="pr-cards-container" style="margin-top: 30px;">
+        <div class="search-row-inner">
+          <div class="search-box">
+            <input type="text" placeholder="Search by PR No:" [(ngModel)]="prSearchText" (keyup)="filterPrs()">
+            <button class="search-btn">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="pr-list-wrap">
+          <div class="pr-card-simple" *ngFor="let pr of filteredPrs">
+            <div class="pr-header-row">
+              <div class="pr-no">PR No : {{ pr.pr_no }}</div>
+            </div>
+
+            <div class="vendor-tracker-block" *ngFor="let vendor of getVendorsForPr(pr)">
+              <div class="pr-project-name">{{ vendor.name }}</div>
+
+              <div class="stepper-wrapper">
+                <div class="stepper-track"></div>
+                <div class="step" *ngFor="let step of ['PR', 'Quote', 'PO', 'GRN', 'IQC', 'Inventory']">
+                  <div class="step-circle" [ngClass]="getStageStatus(pr, step, vendor)">
+                    <div class="inner-circle" *ngIf="getStageStatus(pr, step, vendor) !== 'pending'"></div>
+                  </div>
+                  <div class="step-label">{{ step }}</div>
+                  <div class="step-reason" *ngIf="getStageReason(pr, step, vendor)">{{ getStageReason(pr, step, vendor) }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="empty-state" *ngIf="filteredPrs.length === 0">
+            <p>No Purchase Requests found.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- O&M User Dashboard (Nikitha) - PR Status + PR Tracking only -->
+  <div class="rnd-dashboard" *ngIf="isOmUser">
+    <div class="dashboard-main-content">
+      <div class="charts-row">
+        <!-- PR Status Chart -->
+        <div class="chart-card">
+          <h3 class="chart-title text-blue">PR Status</h3>
+          <div class="chart-content">
+            <div class="donut-container">
+              <div class="donut-chart" [style.background]="prDonutStyle"></div>
+              <div class="donut-inner">
+                <span class="center-val">{{ prStats.open + prStats.approved + prStats.rejected }}</span>
+              </div>
+            </div>
+            <div class="chart-legend">
+              <div class="legend-item"><span class="dot" style="background: #fcd34d;"></span> Open <span
+                  class="legend-val">{{ prStats.open }}</span></div>
+              <div class="legend-item"><span class="dot" style="background: #22c55e;"></span> Approved <span
+                  class="legend-val">{{ prStats.approved }}</span></div>
+              <div class="legend-item"><span class="dot" style="background: #f87171;"></span> Rejected <span
+                  class="legend-val">{{ prStats.rejected }}</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PR Tracking Section for O&M -->
+      <div class="pr-cards-container" style="margin-top: 30px;">
+        <div class="search-row-inner">
+          <div class="search-box">
+            <input type="text" placeholder="Search by PR No:" [(ngModel)]="prSearchText" (keyup)="filterPrs()">
+            <button class="search-btn">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="pr-list-wrap">
+          <div class="pr-card-simple" *ngFor="let pr of filteredPrs">
+            <div class="pr-header-row">
+              <div class="pr-no">PR No : {{ pr.pr_no }}</div>
+            </div>
+            <div class="vendor-tracker-block" *ngFor="let vendor of getVendorsForPr(pr)">
+              <div class="pr-project-name">{{ vendor.name }}</div>
+              <div class="stepper-wrapper">
+                <div class="stepper-track"></div>
+                <div class="step" *ngFor="let step of ['PR', 'Quote', 'PO', 'GRN', 'IQC', 'Inventory']">
+                  <div class="step-circle" [ngClass]="getStageStatus(pr, step, vendor)">
+                    <div class="inner-circle" *ngIf="getStageStatus(pr, step, vendor) !== 'pending'"></div>
+                  </div>
+                  <div class="step-label">{{ step }}</div>
+                  <div class="step-reason" *ngIf="getStageReason(pr, step, vendor)">{{ getStageReason(pr, step, vendor) }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="empty-state" *ngIf="filteredPrs.length === 0">
+            <p>No Purchase Requests found.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Department Specific Dashboards -->
+  <div class="rnd-dashboard"
+    *ngIf="isRnDUser || isQualityUser || isProductionUser || isStoreUser || isPurchaseUser || isFinanceUser">
+    <div class="dashboard-main-content">
+      <div class="charts-row">
+
+      <!-- PR Status Chart (Hidden for Store and Finance) -->
+      <div class="chart-card"
+        *ngIf="(isRnDUser || isQualityUser || isProductionUser || isPurchaseUser) && !isStoreUser && !isFinanceUser">
+        <h3 class="chart-title text-blue">PR Status</h3>
+        <div class="chart-content">
+          <div class="donut-container">
+            <div class="donut-chart" [style.background]="prDonutStyle"></div>
+            <div class="donut-inner">
+              <span class="center-val">{{ prStats.open + prStats.approved + prStats.rejected }}</span>
+            </div>
+          </div>
+          <div class="chart-legend" *ngIf="!isPurchaseUser">
+            <div class="legend-item"><span class="dot" style="background: #fcd34d;"></span> Open <span
+                class="legend-val">{{ prStats.open }}</span></div>
+            <div class="legend-item"><span class="dot" style="background: #22c55e;"></span> Approved <span
+                class="legend-val">{{ prStats.approved }}</span></div>
+            <div class="legend-item"><span class="dot" style="background: #f87171;"></span> Rejected <span
+                class="legend-val">{{ prStats.rejected }}</span></div>
+          </div>
+          <div class="chart-legend" *ngIf="isPurchaseUser">
+            <div class="legend-item"><span class="dot" style="background: #003f7a;"></span> Open <span
+                class="legend-val">{{ prStats.open }}</span></div>
+            <div class="legend-item"><span class="dot" style="background: #0ea5e9;"></span> Approved <span
+                class="legend-val">{{ prStats.approved }}</span></div>
+            <div class="legend-item"><span class="dot" style="background: #93c5fd;"></span> Overdue <span
+                class="legend-val">{{ prStats.rejected }}</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PO Status Chart (Only for Purchase and Finance) -->
+      <div class="chart-card" *ngIf="isPurchaseUser || isFinanceUser">
+        <h3 class="chart-title" style="color: #22c55e;" *ngIf="isPurchaseUser">PO Status</h3>
+        <h3 class="chart-title" style="color: #16a34a;" *ngIf="isFinanceUser">Payment Status</h3>
+        <div class="chart-content">
+          <div class="donut-container">
+            <div class="donut-chart" [style.background]="isPurchaseUser ? poDonutStyle : paymentDonutStyle"></div>
+            <div class="donut-inner">
+              <span class="center-val" *ngIf="isPurchaseUser">{{ poStats.open + poStats.approved }}</span>
+              <span class="center-val" *ngIf="isFinanceUser">{{ paymentStats.completed + paymentStats.pending }}</span>
+            </div>
+          </div>
+          <div class="chart-legend" *ngIf="isPurchaseUser">
+            <div class="legend-item"><span class="dot" style="background: #fcd34d;"></span> Open <span
+                class="legend-val">{{ poStats.open }}</span></div>
+            <div class="legend-item"><span class="dot" style="background: #22c55e;"></span> Approved <span
+                class="legend-val">{{ poStats.approved }}</span></div>
+          </div>
+          <div class="chart-legend" *ngIf="isFinanceUser">
+            <div class="legend-item"><span class="dot" style="background: #22c55e;"></span> Completed <span
+                class="legend-val">{{ paymentStats.completed }}</span></div>
+            <div class="legend-item"><span class="dot" style="background: #fcd34d;"></span> Pending <span
+                class="legend-val">{{ paymentStats.pending }}</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MRN Status Chart (For R&D, Production and Store) -->
+      <div class="chart-card"
+        *ngIf="(isRnDUser || isProductionUser || isStoreUser) && !isPurchaseUser && !isFinanceUser">
+        <h3 class="chart-title" style="color: #003f7a;">MRN Status</h3>
+        <div class="chart-content">
+          <div class="donut-container">
+            <div class="donut-chart" [style.background]="mrnDonutStyle"></div>
+            <div class="donut-inner">
+              <span class="center-val">{{ mrnStats.open + mrnStats.closed + mrnStats.overdue }}</span>
+            </div>
+          </div>
+          <div class="chart-legend">
+            <div class="legend-item"><span class="dot" style="background: #003f7a;"></span> Pending <span
+                class="legend-val">{{ mrnStats.open }}</span></div>
+            <div class="legend-item"><span class="dot" style="background: #0ea5e9;"></span> Approved <span
+                class="legend-val">{{ mrnStats.closed }}</span></div>
+            <div class="legend-item"><span class="dot" style="background: #93c5fd;"></span> Issued <span
+                class="legend-val">{{ mrnStats.overdue }}</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GRN Status Chart (For Quality and Store) -->
+      <div class="chart-card" *ngIf="(isQualityUser || isStoreUser) && !isPurchaseUser && !isFinanceUser">
+        <h3 class="chart-title" style="color: #003f7a;">GRN Status</h3>
+        <div class="chart-content">
+          <div class="donut-container">
+            <div class="donut-chart" [style.background]="grnDonutStyle"></div>
+            <div class="donut-inner">
+              <span class="center-val">{{ grnStats.pending + grnStats.completed + grnStats.rejected }}</span>
+            </div>
+          </div>
+          <div class="chart-legend">
+            <div class="legend-item"><span class="dot" style="background: #003f7a;"></span> Fully Received <span
+                class="legend-val">{{ grnStats.pending }}</span></div>
+            <div class="legend-item"><span class="dot" style="background: #0ea5e9;"></span> Partial Received <span
+                class="legend-val">{{ grnStats.completed }}</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- IQC Status Chart (Only for Quality) -->
+      <div class="chart-card" *ngIf="isQualityUser && !isPurchaseUser && !isFinanceUser">
+        <h3 class="chart-title" style="color: #3730a3;">IQC Status</h3>
+        <div class="chart-content">
+          <div class="donut-container">
+            <div class="donut-chart" [style.background]="iqcDonutStyle"></div>
+            <div class="donut-inner">
+              <span class="center-val">{{ iqcStats.pending + iqcStats.partial + iqcStats.completed }}</span>
+            </div>
+          </div>
+          <div class="chart-legend">
+            <div class="legend-item"><span class="dot" style="background: #3730a3;"></span> QC Pending <span
+                class="legend-val">{{ iqcStats.pending }}</span></div>
+            <div class="legend-item"><span class="dot" style="background: #8b5cf6;"></span> Partially Inspected <span
+                class="legend-val">{{ iqcStats.partial }}</span></div>
+            <div class="legend-item"><span class="dot" style="background: #7dd3fc;"></span> Fully Inspected <span
+                class="legend-val">{{ iqcStats.completed }}</span></div>
+          </div>
+        </div>
+      </div>
+      </div>
+
+      <!-- PR Tracking Section for Department Dashboards -->
+      <div class="pr-cards-container" style="margin-top: 30px;">
+        <div class="search-row-inner">
+          <div class="search-box">
+            <input type="text" placeholder="Search by PR No:" [(ngModel)]="prSearchText" (keyup)="filterPrs()">
+            <button class="search-btn">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="pr-list-wrap">
+          <div class="pr-card-simple" *ngFor="let pr of filteredPrs">
+            <div class="pr-header-row">
+              <div class="pr-no">PR No : {{ pr.pr_no }}</div>
+            </div>
+
+            <div class="vendor-tracker-block" *ngFor="let vendor of getVendorsForPr(pr)">
+              <div class="pr-project-name">{{ vendor.name }}</div>
+
+              <div class="stepper-wrapper">
+                <div class="stepper-track"></div>
+                <div class="step" *ngFor="let step of ['PR', 'Quote', 'PO', 'GRN', 'IQC', 'Inventory']">
+                  <div class="step-circle" [ngClass]="getStageStatus(pr, step, vendor)">
+                    <div class="inner-circle" *ngIf="getStageStatus(pr, step, vendor) !== 'pending'"></div>
+                  </div>
+                  <div class="step-label">{{ step }}</div>
+                  <div class="step-reason" *ngIf="getStageReason(pr, step, vendor)">{{ getStageReason(pr, step, vendor) }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="empty-state" *ngIf="filteredPrs.length === 0">
+            <p>No Purchase Requests found.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

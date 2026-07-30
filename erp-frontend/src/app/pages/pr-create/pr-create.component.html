@@ -1,0 +1,547 @@
+<div class="page-container" [class.professional-mode]="isReviewMode">
+  <!-- Professional Branded Header (Visible on Screen & Print in Review Mode) -->
+  <div class="document-header branded-header" *ngIf="isReviewMode">
+    <div class="header-left">
+      <img src="assets/logo.png" alt="Company Logo" class="doc-logo">
+      <div class="company-info">
+        <h3>GENROBOTICS INNOVATIONS PVT LTD</h3>
+        <p class="dept-badge">Purchase Department</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <h1 class="document-title">PURCHASE REQUEST</h1>
+      <div class="pr-id-box">
+        <span class="label">PR NO:</span>
+        <span class="value">{{ pr.pr_no }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notifications -->
+  <div class="toast-container" *ngIf="success || error">
+    <div class="toast toast-success" *ngIf="success">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+      {{ success }}
+    </div>
+    <div class="toast toast-error" *ngIf="error">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      {{ error }}
+    </div>
+  </div>
+
+  <!-- Floating Item-Added Toast (top-right, outside modal) -->
+  <div class="item-added-floating-toast"
+       [class.toast-warning]="selectionToastType === 'warning'"
+       *ngIf="selectionToast">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3">
+      <polyline *ngIf="selectionToastType === 'success'" points="20 6 9 17 4 12"/>
+      <path *ngIf="selectionToastType === 'warning'" d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+      <line *ngIf="selectionToastType === 'warning'" x1="12" y1="9" x2="12" y2="13"/>
+      <line *ngIf="selectionToastType === 'warning'" x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+    {{ selectionToast }}
+  </div>
+
+  <!-- Department Restriction Error -->
+  <div class="restriction-overlay" *ngIf="error && error.includes('department is not authorized')">
+    <div class="restriction-card">
+      <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#ef4444" stroke-width="2">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      </svg>
+      <h3>Access Restricted</h3>
+      <p>{{ error }}</p>
+      <button class="btn-back-home" routerLink="/admin/purchase-requests">Return to PR List</button>
+    </div>
+  </div>
+
+  <div class="form-card">
+    <!-- Header Area -->
+    <div class="form-header">
+      <div class="header-main">
+        <button class="btn-back" routerLink="/admin/purchase-requests">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
+        <div class="title-wrap">
+          <h1>{{ !editId ? 'CREATE PURCHASE REQUEST' : (isLocked ? 'PURCHASE REQUEST' : 'EDIT PURCHASE REQUEST') }}</h1>
+          <p>{{ !editId ? 'Fill in the details to initiate a new procurement cycle.' : (isLocked ? 'Review the details of this procurement request.' : 'Modify the details of this procurement request.') }}</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div class="pr-ref-badge" *ngIf="pr.pr_no">
+          {{ pr.pr_no }}
+        </div>
+
+        <button type="button" class="btn-print-slip" *ngIf="isEditMode" (click)="printSlip()">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="6 9 6 2 18 2 18 9"></polyline>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+            <rect x="6" y="14" width="12" height="8"></rect>
+          </svg>
+          Print PR Slip
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Form Grid -->
+    <div class="form-content">
+      <!-- Document Header (Review Mode) -->
+      <div class="review-header-grid" *ngIf="isReviewMode">
+        <div class="review-item">
+          <label>PROJECT</label>
+          <div class="val-large">{{ selectedProject?.project_name || pr.Project?.project_name || '--' }}</div>
+          <div class="val-sub">{{ selectedProject?.project_code || pr.Project?.project_code }}</div>
+        </div>
+        <div class="review-item" *ngIf="pr.bom_revision_id">
+          <label>BOM REVISION</label>
+          <div class="val-text">Revision {{ selectedBom?.revision_no || '--' }}</div>
+        </div>
+        <div class="review-item">
+          <label>REQUEST DATE</label>
+          <div class="val-text">{{ pr.request_date | date:'mediumDate' }}</div>
+        </div>
+        <div class="review-item">
+          <label>REQUESTED BY</label>
+          <div class="val-bold">{{ isEditMode ? pr.Requester?.name : currentUser?.name }}</div>
+          <div class="val-sub">{{ pr.department }} | {{ pr.designation }}</div>
+        </div>
+      </div>
+
+      <!-- Editable Header (Form Mode) -->
+      <div class="grid-row" *ngIf="!isReviewMode">
+        <div class="form-group">
+          <label>Project <span class="req">*</span></label>
+          <select [(ngModel)]="pr.project_id" (change)="onProjectChange()" class="premium-select" [disabled]="isLocked">
+            <option [ngValue]="null">Select a Project</option>
+            <option *ngFor="let p of projects" [ngValue]="p.id">{{ p.project_name }} ({{ p.project_code }})</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>BOM Selection (Optional)</label>
+          <select [(ngModel)]="pr.bom_revision_id" (change)="onBomChange()" class="premium-select"
+            [disabled]="isLocked || !pr.project_id">
+            <option [ngValue]="null">Select Approved BOM</option>
+            <option *ngFor="let b of approvedBoms" [ngValue]="b.id">
+              {{ b.BomProject?.project_name || 'BOM' }} - Rev {{ b.revision_no }}
+            </option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Request Date <span class="req">*</span></label>
+          <input type="date" [(ngModel)]="pr.request_date" class="premium-input readonly-input" readonly>
+        </div>
+      </div>
+
+      <div class="grid-row" *ngIf="!isReviewMode">
+        <div class="form-group">
+          <label>Name</label>
+          <input type="text" [value]="isEditMode ? pr.Requester?.name : currentUser?.name" class="premium-input readonly-input" readonly>
+        </div>
+        <div class="form-group">
+          <label>Designation</label>
+          <input type="text" [(ngModel)]="pr.designation" class="premium-input readonly-input" readonly>
+        </div>
+        <div class="form-group">
+          <label>Department</label>
+          <input type="text" [(ngModel)]="pr.department" class="premium-input readonly-input" readonly>
+        </div>
+      </div>
+
+      <div class="review-remarks-card" *ngIf="isReviewMode && pr.remarks">
+        <label>REMARKS / PURPOSE</label>
+        <p>{{ pr.remarks }}</p>
+      </div>
+
+      <div class="form-group full-width" *ngIf="!isReviewMode">
+        <label>Remarks / Purpose</label>
+        <textarea [(ngModel)]="pr.remarks" class="premium-textarea"
+          placeholder="Describe the reason for this purchase..." [disabled]="isLocked"></textarea>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- Items Table -->
+      <div class="section-header">
+        <div class="table-header-info">
+          <h2>Items To Procure</h2>
+          <span class="selected-count-badge" *ngIf="selectedCount > 0">{{ selectedCount }} Items Selected</span>
+        </div>
+        <div class="section-actions" *ngIf="!isLocked && isOwner && !isReviewMode" style="display: flex; flex-direction: row; align-items: center; gap: 16px;">
+          
+          <!-- Warehouse Dropdown -->
+          <div class="warehouse-select-wrapper" style="position: relative;">
+            <select [(ngModel)]="selectedWarehouse" (change)="onWarehouseChange()" class="warehouse-select" style="border-radius: 12px; border: 1px solid #e2e8f0; padding: 10px 16px; font-size: 14px; outline: none; background: white; font-weight: 600; color: #334155; cursor: pointer; height: 42px; width: 180px;">
+              <option value="All Warehouses">All Warehouses</option>
+              <option *ngFor="let loc of uniqueWarehouses" [value]="loc">{{ loc }}</option>
+            </select>
+          </div>
+
+          <!-- Master Search Bar -->
+          <div class="master-search-wrapper" style="width: 320px; position: relative; display: flex; align-items: center; gap: 8px;">
+            <div style="position: relative; flex: 1;">
+              <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8;">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input type="text" 
+                     [(ngModel)]="masterSearchQuery" 
+                     (input)="filterMasterItems()" 
+                     placeholder="Search by code / item"
+                     class="master-search-input"
+                     style="width: 100%; border-radius: 12px; border: 1px solid #e2e8f0; padding: 10px 10px 10px 40px; font-size: 14px; outline: none; background: white; height: 42px;">
+            </div>
+
+            <button type="button" (click)="filterMasterItems()" style="background: #2563eb; color: white; border: none; padding: 10px 16px; border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer; height: 42px; display: flex; align-items: center; justify-content: center; gap: 4px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);">
+              Search
+            </button>
+            
+            <!-- Search Results Dropdown -->
+            <div class="search-results-dropdown" *ngIf="masterSearchQuery && filteredMasterItems.length > 0" style="position: absolute; top: 100%; left: 0; width: 100%; background: white; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); z-index: 100; max-height: 250px; overflow-y: auto; margin-top: 4px;">
+              <div class="search-result-item" *ngFor="let item of filteredMasterItems" (click)="addFromSearch(item)" style="padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-bottom: 1px solid #f1f5f9; transition: background 0.2s;">
+                <div class="item-info" style="display: flex; flex-direction: column;">
+                  <span class="item-code" style="font-weight: 700; font-size: 12px; color: #2563eb; font-family: monospace;">{{ item.item_code }}</span>
+                  <span class="item-name" style="font-weight: 600; font-size: 13px; color: #1e293b;">{{ item.item_name }}</span>
+                </div>
+                <span class="item-cat" style="font-size: 11px; background: #f1f5f9; padding: 2px 8px; border-radius: 20px; color: #64748b; font-weight: 600;">{{ item.category }}</span>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn-secondary" (click)="addManualRow()" type="button" style="background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 12px; font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); cursor: pointer; white-space: nowrap; height: 42px;">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Add From Inventory
+          </button>
+        </div>
+      </div>
+
+      <!-- Main PR Items Pagination (Pill style) -->
+      <div class="main-pr-pagination" *ngIf="totalPages > 1" style="display: flex; justify-content: flex-end; align-items: center; border-bottom: 1px solid #f1f5f9; padding: 10px 24px; margin-bottom: 16px;">
+        <div class="inline-pagination" style="display: flex; align-items: center; gap: 12px; border: 1px solid #e2e8f0; border-radius: 10px; padding: 4px 12px; height: 42px; background: white;">
+          <button class="btn-pager" (click)="prevPage()" [disabled]="currentPage === 1" style="background: none; border: none; cursor: pointer; display: flex; align-items: center; color: #64748b; padding: 4px;">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <span class="page-info" style="font-size: 13px; font-weight: 700; color: #334155; min-width: 60px; text-align: center;">{{ currentPage }} of {{ totalPages }}</span>
+          <button class="btn-pager" (click)="nextPage()" [disabled]="currentPage === totalPages" style="background: none; border: none; cursor: pointer; display: flex; align-items: center; color: #64748b; padding: 4px;">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Table Container -->
+      <div class="table-container printable-area">
+        <table class="premium-table">
+          <thead>
+            <tr>
+              <th width="40" *ngIf="!isReviewMode"><input type="checkbox" (change)="toggleSelectAll($event)" [disabled]="isLocked"></th>
+              <th width="50">SL</th>
+              <th width="150">ITEM CODE</th>
+              <th>ITEM DETAILS</th>
+              <th width="130">QTY</th>
+              <th width="90">UOM</th>
+              <th width="100">STOCK</th>
+              <th width="180">PRICE</th>
+              <th width="90">TAX%</th>
+              <th width="160">TOTAL (INC. TAX)</th>
+              <th>LINKS/REMARKS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of paginatedItems; let i = index" [class.manual-row]="!row.is_bom_item">
+              <!-- Selection Checkbox -->
+              <td *ngIf="!isReviewMode && row.is_bom_item">
+                <input type="checkbox" [(ngModel)]="row.selected" (ngModelChange)="onBomSelectionChange(row)" [disabled]="isLocked">
+              </td>
+              <td *ngIf="!isReviewMode && !row.is_bom_item">
+                <button class="btn-remove" (click)="removeManualRow(row)" *ngIf="!isLocked" type="button">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M18 6L6 18M6 6l12 12"></path>
+                  </svg>
+                </button>
+              </td>
+
+              <!-- SL -->
+              <td>{{ getGlobalIndex(i) + 1 }}</td>
+
+              <!-- ITEM CODE -->
+              <td>
+                <ng-container *ngIf="row.is_bom_item">
+                  <span class="item-code">{{ row.item_code }}</span>
+                </ng-container>
+                <ng-container *ngIf="!row.is_bom_item">
+                  <input *ngIf="!row.item_id && !isReviewMode" type="text" [attr.list]="'items-' + i" [(ngModel)]="row.item_code" (input)="onCodeInput(row)" class="inline-input-text font-mono" placeholder="Code...">
+                  <span *ngIf="row.item_id || isReviewMode" class="item-code">{{ row.item_code || '---' }}</span>
+                </ng-container>
+              </td>
+
+              <!-- ITEM DETAILS -->
+              <td class="item-select-cell">
+                <ng-container *ngIf="row.is_bom_item">
+                  <div class="item-info-cell">
+                    <span class="item-name">{{ row.item_name }}</span>
+                    <span class="row-badge badge-listed">LISTED</span>
+                  </div>
+                </ng-container>
+                <ng-container *ngIf="!row.is_bom_item">
+                  <div class="search-wrap" *ngIf="!row.item_id && !isReviewMode">
+                    <input type="text" [attr.list]="'items-' + i" [(ngModel)]="row.searchQuery" (input)="onUnifiedItemInput(row)" placeholder="Search or write item name..." class="inline-input-text">
+                    <datalist [id]="'items-' + i">
+                      <option *ngFor="let ai of availableItems" [value]="ai.item_code + ' | ' + ai.item_name"></option>
+                    </datalist>
+                    <div class="badge-row mt-1">
+                      <span class="row-badge badge-nonlisted">NON-LISTED</span>
+                    </div>
+                  </div>
+                  <div class="item-info-cell" *ngIf="row.item_id || isReviewMode">
+                    <span class="item-name">{{ row.item_id ? row.item_name : row.searchQuery }}</span>
+                    <div class="badge-row">
+                      <span class="row-badge" [ngClass]="row.item_id ? 'badge-external' : 'badge-nonlisted'">
+                        {{ row.item_id ? 'EXTERNAL' : 'NON-LISTED' }}
+                      </span>
+                    </div>
+                  </div>
+                </ng-container>
+              </td>
+
+              <!-- QTY -->
+              <td>
+                <input type="number" [(ngModel)]="row.quantity" class="inline-input" [readonly]="isReviewMode" 
+                       (change)="calculateTotal(row)" step="1" onkeypress="return event.charCode >= 48 && event.charCode <= 57">
+              </td>
+
+              <!-- UOM -->
+              <td>
+                <ng-container *ngIf="row.is_bom_item">
+                  {{ row.uom }}
+                </ng-container>
+                <ng-container *ngIf="!row.is_bom_item">
+                  <input *ngIf="!row.item_id && !isReviewMode" type="text" [(ngModel)]="row.uom" class="inline-input-text" placeholder="UOM...">
+                  <span *ngIf="row.item_id || isReviewMode">{{ row.uom }}</span>
+                </ng-container>
+              </td>
+
+              <!-- STOCK -->
+              <td>
+                <span class="stock-badge" [class.stock-low]="row.inventory_stock <= 0">
+                  {{ (row.inventory_stock > 0 ? row.inventory_stock : 0) }}
+                </span>
+              </td>
+
+              <!-- PRICE -->
+              <td>
+                <div class="currency-cell">
+                  <span class="currency-sign">₹</span>
+                  <input type="number" [(ngModel)]="row.unit_price" (change)="calculateTotal(row)" class="inline-input price-input" [readonly]="isReviewMode">
+                </div>
+              </td>
+
+              <!-- TAX -->
+              <td>
+                <input type="number" [(ngModel)]="row.tax_percent" (change)="calculateTotal(row)" class="inline-input" [readonly]="isReviewMode">
+              </td>
+
+              <!-- TOTAL -->
+              <td class="total-val">{{ row.total_price | currency:'INR' }}</td>
+
+              <!-- REMARKS -->
+              <td>
+                <input type="text" [(ngModel)]="row.links_remarks_contact" class="inline-input-text" placeholder="Add details..." [readonly]="isReviewMode">
+              </td>
+            </tr>
+
+            <!-- Placeholder if no items -->
+            <tr *ngIf="allCombinedItems.length === 0">
+              <td colspan="11" class="placeholder-cell">
+                <p>No items selected. Select a BOM or manually add items to procure.</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+        </div>
+      </div>
+
+    <div class="loading-overlay" *ngIf="loading">
+      <div class="spinner"></div>
+      <p>Loading details...</p>
+    </div>
+
+    <!-- ITEM SELECTION MODAL -->
+    <div class="modal-backdrop" *ngIf="showItemModal">
+      <div class="modal-content item-selection-modal">
+        <div class="modal-header">
+          <h2>Select Items from Master</h2>
+          <button class="close-btn" (click)="closeItemModal()">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6L6 18M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+
+        <div class="modal-body">
+        <!-- RECENTLY ADDED SECTION -->
+        <div class="recently-added-section" *ngIf="recentlyAddedItems.length > 0">
+          <div class="section-title">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            Recently Added ({{ recentlyAddedItems.length }})
+          </div>
+          <div class="recent-pills">
+            <div class="recent-pill" *ngFor="let ri of recentlyAddedItems">
+              <span class="pill-code">{{ ri.item_code }}</span>
+              <span class="pill-name">{{ ri.item_name }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="search-bar-wrap">
+          <svg class="search-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" [(ngModel)]="itemSearchQuery" (input)="filterModalItems()" placeholder="Search by code / item">
+        </div>
+
+        <!-- Inventory Modal Pagination (Moved to Top Right) -->
+        <div class="modal-pagination-top" style="display: flex; justify-content: flex-end; align-items: center; padding: 12px 32px; border-bottom: 1px solid #f1f5f9; background: #f8fafc;" *ngIf="totalModalPages > 1">
+          <div style="display: flex; align-items: center; gap: 15px; background: white; padding: 4px 12px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+            <span class="pagination-info" style="font-size: 12px; font-weight: 700; color: #1e293b;">Page {{ modalCurrentPage }} of {{ totalModalPages }}</span>
+            <div class="pagination-btns" style="display: flex; gap: 8px;">
+              <button class="btn-pager" (click)="modalCurrentPage = modalCurrentPage - 1" [disabled]="modalCurrentPage === 1" style="padding: 4px 8px; border: none; background: #f1f5f9; border-radius: 4px; cursor: pointer; display: flex; align-items: center;">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+              </button>
+              <button class="btn-pager" (click)="modalCurrentPage = modalCurrentPage + 1" [disabled]="modalCurrentPage === totalModalPages" style="padding: 4px 8px; border: none; background: #f1f5f9; border-radius: 4px; cursor: pointer; display: flex; align-items: center;">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Item Selection Mini Toast -->
+        <div class="item-selection-toast" *ngIf="itemSelectedMessage">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          {{ itemSelectedMessage }}
+        </div>
+
+          <div class="modal-table-wrap">
+            <table class="modal-table">
+              <thead>
+                <tr>
+                  <th width="180">ITEM CODE</th>
+                  <th>NAME</th>
+                  <th width="120">QTY</th>
+                  <th width="100" class="text-center">ACTION</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of paginatedModalItems">
+                  <td class="font-mono text-xs">{{ item.item_code }}</td>
+                  <td>
+                    <div class="item-name-bold">{{ item.item_name }}</div>
+                    <div class="item-cat-small">{{ item.category }}</div>
+                  </td>
+                  <td>
+                    <input type="number" [(ngModel)]="item.tempQuantity" class="inline-input modal-qty-input" 
+                           min="1" step="1" onkeypress="return event.charCode >= 48 && event.charCode <= 57">
+                  </td>
+                  <td class="text-center">
+                    <button class="btn-add-item" (click)="selectItemFromModal(item)" *ngIf="!isItemAdded(item.id)">
+                      Add
+                    </button>
+                    <span class="added-status" *ngIf="isItemAdded(item.id)">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      Already in PR
+                    </span>
+                  </td>
+                </tr>
+                <tr *ngIf="filteredModalItems.length === 0">
+                  <td colspan="4" class="empty-results">No items found matching your search.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+
+        <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+          <div class="session-stat" *ngIf="sessionAddedCount > 0" style="font-size: 13px; color: #64748b; font-weight: 600;">
+            {{ sessionAddedCount }} items added in this session
+          </div>
+          <div style="flex: 1"></div>
+          <button class="btn-done" (click)="closeItemModal()">Done Checking</button>
+        </div>
+      </div>
+    </div>
+    <!-- End modal -->
+
+    <!-- Print Signatures (Professional Slip) -->
+    <div class="print-only signatures-section">
+      <div class="sig-col">
+        <div class="sig-line"></div>
+        <label>Prepared By</label>
+        <p>{{ isEditMode ? pr.Requester?.name : currentUser?.name }}</p>
+      </div>
+      <div class="sig-col">
+        <div class="sig-line"></div>
+        <label>Dept. Head Approval</label>
+      </div>
+      <div class="sig-col">
+        <div class="sig-line"></div>
+        <label>Finance / Audit</label>
+      </div>
+      <div class="sig-col">
+        <div class="sig-line"></div>
+        <label>Purchase / Stores</label>
+      </div>
+    </div>
+
+
+    <!-- Footer Actions -->
+    <div class="form-footer">
+      <div class="status-box" *ngIf="error || success">
+        <span class="error-msg" *ngIf="error">{{ error }}</span>
+        <span class="success-msg" *ngIf="success">{{ success }}</span>
+      </div>
+
+
+
+      <div class="actions" *ngIf="!isLocked">
+        <button class="btn-cancel" routerLink="/admin/purchase-requests" [disabled]="submittingDraft || submittingFinal">
+          Cancel
+        </button>
+
+        <button class="btn-draft" (click)="onSubmit(false)" [disabled]="submittingDraft || submittingFinal" *ngIf="(isOwner || canSeeAllPrs) && !isLocked && pr.status === 'Draft'">
+          <span *ngIf="!submittingDraft">Save as Draft</span>
+          <span *ngIf="submittingDraft">Saving...</span>
+        </button>
+
+        <div class="btn-spacer"></div>
+
+        <button class="btn-submit" (click)="onSubmit(true)" [disabled]="submittingDraft || submittingFinal" *ngIf="(isOwner || canSeeAllPrs) && !isLocked">
+          <span *ngIf="!submittingFinal">{{ pr.status === 'Submitted' ? 'Update & Submit' : 'Submit' }}</span>
+          <span *ngIf="submittingFinal">Submitting...</span>
+        </button>
+      </div>
+
+      <div class="actions" *ngIf="isLocked">
+        <button class="btn-cancel" routerLink="/admin/purchase-requests">Back to List</button>
+
+        <div class="locked-badge"
+          [ngClass]="{'status-approved': pr.status === 'Approved', 'status-rejected': pr.status === 'Rejected'}">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          LOCKED ({{ pr.status }})
+        </div>
+      </div>
+  </div>
+</div>

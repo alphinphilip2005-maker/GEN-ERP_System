@@ -1,0 +1,261 @@
+<div class="page-wrapper" *ngIf="!loading && project && revision">
+  <div class="page-header">
+    <div class="header-left">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+        <button class="btn-icon" (click)="goBack()" title="Back to Project">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <h1 class="page-title">Revision Review</h1>
+      </div>
+      <p class="page-subtitle">Comparative analysis of BOM changes for revision <strong>{{ revision.revision_no }}</strong>.</p>
+    </div>
+    <div class="header-right" style="display: flex; align-items: center; gap: 16px;">
+      <div class="status-badge" [ngClass]="'status-' + (revision.status || 'Pending').toLowerCase()">
+         {{ revision.status || 'Pending' }}
+      </div>
+      <div class="revision-badge">REV {{ revision.revision_no }}</div>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="summary-grid" *ngIf="reviewDiff">
+    <div class="summary-card added">
+      <div class="card-icon">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </div>
+      <div class="card-info">
+        <span class="card-label">Newly Added</span>
+        <h2 class="card-value">{{ reviewDiff.summary.added }} Items</h2>
+      </div>
+    </div>
+    <div class="summary-card removed">
+      <div class="card-icon">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </div>
+      <div class="card-info">
+        <span class="card-label">Removed</span>
+        <h2 class="card-value">{{ reviewDiff.summary.removed }} Items</h2>
+      </div>
+    </div>
+    <div class="summary-card modified">
+      <div class="card-icon">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </div>
+      <div class="card-info">
+        <span class="card-label">Quantity Changes</span>
+        <h2 class="card-value">{{ reviewDiff.summary.changed }} Items</h2>
+      </div>
+    </div>
+  </div>
+
+  <!-- Revision Header Block -->
+  <div class="card detail-card">
+    <div class="card-body">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px;">
+        <div class="detail-item">
+          <label>Project Name</label>
+          <p>{{ project.project_name }}</p>
+        </div>
+        <div class="detail-item">
+          <label>Released On</label>
+          <p>{{ revision.revised_on | date:'mediumDate' }}</p>
+        </div>
+        <div class="detail-item">
+          <label>Released By</label>
+          <p>{{ revision.revised_by }}</p>
+        </div>
+        <div class="detail-item" *ngIf="revision.approved_by">
+          <label>Approved By</label>
+          <p class="text-success">{{ revision.approved_by }}</p>
+        </div>
+      </div>
+      <div class="detail-item" style="margin-top: 16px;">
+        <label>Change Description</label>
+        <p class="comment-box">{{ revision.change_description || 'Initial Release' }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detailed Changes List -->
+  <div class="section-container" *ngIf="reviewDiff">
+    <h3 class="section-title">Comparative Diff</h3>
+    <div class="card diff-card">
+      <div *ngIf="!reviewDiff.addedItems?.length && !reviewDiff.removedItems?.length && !reviewDiff.modifiedItems?.length" class="empty-diff-state" style="padding: 40px; text-align: center; color: #64748b;">
+        <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#cbd5e1" stroke-width="1.5" style="margin-bottom: 12px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        <p style="font-weight: 600;">No changes detected in this revision.</p>
+        <p style="font-size: 13px;">All items match the previous revision exactly.</p>
+      </div>
+
+      <!-- Added -->
+      <div class="diff-group" *ngIf="reviewDiff.addedItems?.length > 0">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 2px solid #f0fdf4; padding-bottom: 8px;">
+          <h4 class="diff-subtitle text-success" style="margin: 0;">Added Items</h4>
+          
+          <!-- Added Pagination (Top Right) -->
+          <div class="pagination-controls diff-pagination" *ngIf="reviewDiff.addedItems.length > diffPageSize" style="margin: 0; padding: 0; border: none; display: flex; align-items: center; gap: 10px;">
+            <span class="page-info" style="font-size: 11px; font-weight: 700; color: #64748b;">Page {{ diffAddedCurrentPage }} of {{ totalAddedPages }}</span>
+            <div style="display: flex; gap: 4px;">
+              <button class="page-btn" (click)="diffAddedCurrentPage = diffAddedCurrentPage - 1" [disabled]="diffAddedCurrentPage === 1" style="padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0; background: white; cursor: pointer;">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <button class="page-btn" (click)="diffAddedCurrentPage = diffAddedCurrentPage + 1" [disabled]="diffAddedCurrentPage === totalAddedPages" style="padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0; background: white; cursor: pointer;">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="diff-list">
+          <div class="diff-item added" *ngFor="let item of paginatedAdded">
+            <span class="tag tag-success">ADD</span>
+            <span class="item-code">{{ item.Item?.item_code }}</span>
+            <span class="item-name">{{ item.Item?.item_name }}</span>
+            <span class="item-qty">Qty: {{ item.quantity }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Removed -->
+      <div class="diff-group" *ngIf="reviewDiff.removedItems?.length > 0" style="margin-top: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 2px solid #fef2f2; padding-bottom: 8px;">
+          <h4 class="diff-subtitle text-danger" style="margin: 0;">Removed Items</h4>
+          
+          <!-- Removed Pagination (Top Right) -->
+          <div class="pagination-controls diff-pagination" *ngIf="reviewDiff.removedItems.length > diffPageSize" style="margin: 0; padding: 0; border: none; display: flex; align-items: center; gap: 10px;">
+            <span class="page-info" style="font-size: 11px; font-weight: 700; color: #64748b;">Page {{ diffRemovedCurrentPage }} of {{ totalRemovedPages }}</span>
+            <div style="display: flex; gap: 4px;">
+              <button class="page-btn" (click)="diffRemovedCurrentPage = diffRemovedCurrentPage - 1" [disabled]="diffRemovedCurrentPage === 1" style="padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0; background: white; cursor: pointer;">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <button class="page-btn" (click)="diffRemovedCurrentPage = diffRemovedCurrentPage + 1" [disabled]="diffRemovedCurrentPage === totalRemovedPages" style="padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0; background: white; cursor: pointer;">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="diff-list">
+          <div class="diff-item removed" *ngFor="let item of paginatedRemoved">
+            <span class="tag tag-danger">DEL</span>
+            <span class="item-code text-strikethrough">{{ item.Item?.item_code }}</span>
+            <span class="item-name text-strikethrough">{{ item.Item?.item_name }}</span>
+            <span class="item-qty">Qty: {{ item.quantity }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modified -->
+      <div class="diff-group" *ngIf="reviewDiff.modifiedItems?.length > 0" style="margin-top: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 2px solid #fffbeb; padding-bottom: 8px;">
+          <h4 class="diff-subtitle text-warning" style="margin: 0;">Modified Quantities</h4>
+          
+          <!-- Modified Pagination (Top Right) -->
+          <div class="pagination-controls diff-pagination" *ngIf="reviewDiff.modifiedItems.length > diffPageSize" style="margin: 0; padding: 0; border: none; display: flex; align-items: center; gap: 10px;">
+            <span class="page-info" style="font-size: 11px; font-weight: 700; color: #64748b;">Page {{ diffModifiedCurrentPage }} of {{ totalModifiedPages }}</span>
+            <div style="display: flex; gap: 4px;">
+              <button class="page-btn" (click)="diffModifiedCurrentPage = diffModifiedCurrentPage - 1" [disabled]="diffModifiedCurrentPage === 1" style="padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0; background: white; cursor: pointer;">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <button class="page-btn" (click)="diffModifiedCurrentPage = diffModifiedCurrentPage + 1" [disabled]="diffModifiedCurrentPage === totalModifiedPages" style="padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0; background: white; cursor: pointer;">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="diff-list">
+          <div class="diff-item modified" *ngFor="let item of paginatedModified">
+            <span class="tag tag-warning">MOD</span>
+            <span class="item-code">{{ item.Item?.item_code }}</span>
+            <span class="item-name">{{ item.Item?.item_name }}</span>
+            <div class="qty-diff">
+              <span class="old-value">{{ item.prev_quantity }}</span>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              <span class="new-value">{{ item.quantity }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Full Snapshot -->
+  <div class="section-container" style="margin-top: 32px;">
+    <h3 class="section-title">Full Revision Snapshot</h3>
+    <div class="card table-card">
+      <!-- Snapshot Pagination (Moved to Top) -->
+      <div class="pagination-controls" *ngIf="reviewItems.length > snapshotPageSize" style="border-top: none; border-bottom: 1px solid #f1f5f9; justify-content: flex-end; padding: 10px 24px;">
+        <button class="page-btn" (click)="snapshotCurrentPage = snapshotCurrentPage - 1" [disabled]="snapshotCurrentPage === 1">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
+        <span class="page-info">Page {{ snapshotCurrentPage }} of {{ totalSnapshotPages }}</span>
+        <button class="page-btn" (click)="snapshotCurrentPage = snapshotCurrentPage + 1" [disabled]="snapshotCurrentPage === totalSnapshotPages">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </button>
+      </div>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Sl.</th>
+            <th>Item Code</th>
+            <th>Item Name</th>
+            <th>Specification</th>
+            <th>Material</th>
+            <th>Qty</th>
+            <th>UOM</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of paginatedSnapshot; let i = index">
+            <td>{{ ((snapshotCurrentPage - 1) * snapshotPageSize + i + 1).toString().padStart(2, '0') }}</td>
+            <td class="item-code-text">{{ item.Item?.item_code }}</td>
+            <td class="font-medium">{{ item.Item?.item_name }}</td>
+            <td class="text-secondary small">{{ item.Item?.description || '-' }}</td>
+            <td><span class="badge badge-blue" *ngIf="item.Item?.material">{{ item.Item?.material }}</span></td>
+            <td class="font-bold">{{ item.quantity }}</td>
+            <td class="text-secondary">{{ item.Item?.uom }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="toast-container" *ngIf="success || error">
+    <div class="toast toast-success" *ngIf="success">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+      {{ success }}
+    </div>
+    <div class="toast toast-error" *ngIf="error">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      {{ error }}
+    </div>
+  </div>
+
+  <!-- Review Action Footer -->
+  <div class="review-footer" *ngIf="revision.status === 'Pending' && canApprove">
+    <div style="margin-right: auto; display: flex; align-items: center; gap: 12px; color: #64748b;">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      <span style="font-size: 14px; font-weight: 500;">Please review all changes before making a decision.</span>
+    </div>
+    <button class="btn-reject" (click)="rejectRevision()" [disabled]="submitting">Reject Revision</button>
+    <button class="btn-accept" (click)="acceptRevision()" [disabled]="submitting">
+      <svg *ngIf="!submitting" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" style="margin-right: 4px;"><polyline points="20 6 9 17 4 12"/></svg>
+      <span *ngIf="submitting" class="spinner-small"></span>
+      {{ submitting ? 'Processing...' : 'Accept Revision' }}
+    </button>
+  </div>
+</div>
+
+<div class="loading-state" *ngIf="loading && !error">
+  <div class="spinner"></div>
+  <p>Analyzing historical data...</p>
+</div>
+
+<div class="alert-error" *ngIf="error && !success" style="margin: 24px;">
+  {{ error }}
+  <button class="btn btn-outline" (click)="goBack()" style="margin-top: 12px; display: block;">Back to BOM</button>
+</div>

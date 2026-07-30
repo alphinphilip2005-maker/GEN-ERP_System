@@ -1,0 +1,100 @@
+<div class="layout-shell" [class.collapsed]="sidebarCollapsed">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <img src="assets/logo.png" alt="GEN ROBOTICS" class="logo-img">
+      </div>
+      <button class="collapse-btn" (click)="toggleSidebar()" title="Toggle sidebar">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label" (click)="toggleMain()" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+        <span>Main</span>
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" [style.transform]="mainExpanded ? 'rotate(180deg)' : 'rotate(0deg)'" style="transition: transform 0.2s;">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </div>
+      
+      <div class="nav-group" *ngIf="mainExpanded">
+        <ng-container *ngFor="let item of filteredNavItems">
+          <a [routerLink]="item.route"
+             routerLinkActive="active"
+             class="nav-item"
+             [title]="item.label">
+            <span class="nav-icon" [ngClass]="'icon-' + item.icon"></span>
+            <span class="nav-label">{{ item.label }}</span>
+          </a>
+        </ng-container>
+      </div>
+
+      <div class="nav-section-label" (click)="toggleErp()" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+        <span>ERP Modules</span>
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" [style.transform]="erpExpanded ? 'rotate(180deg)' : 'rotate(0deg)'" style="transition: transform 0.2s;">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </div>
+      
+      <div class="nav-group" *ngIf="erpExpanded">
+        <a *ngFor="let mod of filteredErpModules"
+           [routerLink]="mod.route"
+           routerLinkActive="active"
+           class="nav-item"
+           [title]="mod.label">
+          <span class="nav-icon" [ngClass]="'icon-' + mod.icon"></span>
+          <span class="nav-label">{{ mod.label }}</span>
+        </a>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="logout-btn" (click)="logout()">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+        <span class="nav-label">Logout</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <div class="main-area">
+
+    <!-- Top Header -->
+    <header class="top-header">
+      <div class="header-left">
+        <div class="breadcrumb">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          Gen ERP
+        </div>
+      </div>
+
+      <div class="header-right">
+        <app-notification-bell></app-notification-bell>
+
+        <div class="user-chip">
+          <div class="user-avatar">{{ getInitials() }}</div>
+          <div class="user-meta">
+            <span class="user-name">{{ currentUser?.name || 'User' }}</span>
+            <span class="user-email">{{ currentUser?.email || '' }}</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <main class="page-area">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+
+</div>

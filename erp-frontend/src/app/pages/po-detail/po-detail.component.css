@@ -1,0 +1,651 @@
+/* ===== Base Table Styles ===== */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: transparent;
+}
+
+.data-table th,
+.data-table td {
+  padding: 12px 14px;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 13.5px;
+}
+
+.data-table th {
+  font-weight: 700;
+  color: #1e293b;
+  text-transform: uppercase;
+  font-size: 11.5px;
+  letter-spacing: 0.05em;
+  background-color: #f1f5f9;
+}
+
+.data-table tbody tr:hover {
+  background-color: rgba(241, 245, 249, 0.5);
+}
+
+/* ===== Invoice Wrapper ===== */
+.invoice-wrapper {
+  background: white;
+  padding: 40px;
+  margin-top: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  max-width: 1000px;
+  margin-left: auto;
+  margin-right: auto;
+  color: #1c1c1c;
+}
+
+/* ===== Black Header Banner ===== */
+.invoice-header-banner {
+  background: #1e1e2e;
+  color: #fff;
+  padding: 28px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 8px;
+  margin-bottom: 35px;
+}
+
+.invoice-header-banner h1 {
+  margin: 0;
+  font-size: 26px;
+  letter-spacing: 4px;
+  font-weight: 300;
+  color: #e2e8f0;
+  text-transform: uppercase;
+}
+
+.company-details {
+  text-align: right;
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.7;
+}
+
+/* ===== Two-Column Party / Info Section ===== */
+.invoice-party-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 40px;
+  margin-bottom: 35px;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 30px;
+}
+
+.party-block {
+  flex: 1;
+}
+
+.party-block h3 {
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #1e3a8a;
+  border-bottom: 2px solid #1e3a8a;
+  padding-bottom: 5px;
+}
+
+/* ===== Order Info Grid (Right Column) ===== */
+.meta-grid {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 8px 10px;
+  font-size: 13px;
+}
+
+.meta-label {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.meta-val {
+  font-weight: 600;
+  color: #1c1c1c;
+}
+
+/* ===== Print Support ===== */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .invoice-wrapper,
+  .invoice-wrapper * {
+    visibility: visible;
+  }
+
+  .invoice-wrapper {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 20px;
+    box-shadow: none;
+    border-radius: 0;
+  }
+
+  .page-header,
+  .btn,
+  .alert-error {
+    display: none !important;
+  }
+
+  .invoice-header-banner {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+/* ===== Status Pills ===== */
+.status-pill {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-orange { background-color: #ed8936; }
+.badge-red { background-color: #9b2c2c; }
+.badge-green { background-color: #48bb78; }
+.badge-blue { background-color: #4299e1; }
+.badge-cyan { background-color: #38b2ac; }
+.badge-grey { background-color: #94a3b8; }
+
+/* Approval Status Badge at Top */
+.approval-badge-top {
+  display: flex;
+  align-items: center;
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+/* Management Review Section (at bottom) */
+.management-review-section {
+  margin-top: 40px;
+  padding: 30px;
+  background: #f8fafc;
+  border: 1.5px dashed #cbd5e1;
+  border-radius: 12px;
+}
+
+.review-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.review-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e3a8a;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.approve-checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  padding: 20px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.approve-checkbox-row:hover {
+  border-color: #94a3b8;
+  background: #f1f5f9;
+}
+
+.approve-checkbox-row.approved {
+  border-color: #16a34a;
+  background: #f0fdf4;
+}
+
+.checkbox-container {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.checkbox-container input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.checkmark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 24px;
+  width: 24px;
+  background-color: #fff;
+  border: 2px solid #cbd5e1;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.approve-checkbox-row:hover .checkmark {
+  border-color: #94a3b8;
+}
+
+.checkbox-container input:checked ~ .checkmark {
+  background-color: #16a34a;
+  border-color: #16a34a;
+}
+
+.checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+.checkbox-container input:checked ~ .checkmark:after {
+  display: block;
+}
+
+.checkbox-container .checkmark:after {
+  left: 8px;
+  top: 4px;
+  width: 6px;
+  height: 12px;
+  border: solid white;
+  border-width: 0 3px 3px 0;
+  transform: rotate(45deg);
+}
+
+.label-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.label-text strong {
+  font-size: 15px;
+  color: #1e293b;
+}
+
+.label-text span {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+/* Warehouse Options (Radios as Cards) */
+.warehouse-options {
+  display: flex;
+  gap: 15px;
+}
+
+.wh-option {
+  flex: 1;
+  cursor: pointer;
+}
+
+.wh-option input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.wh-card {
+  display: flex;
+  flex-direction: column;
+  padding: 14px 18px;
+  background: white;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  transition: all 0.2s;
+}
+
+.wh-option:hover .wh-card {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.wh-option.selected .wh-card {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.08);
+}
+
+.wh-name {
+  display: block;
+  font-weight: 700;
+  font-size: 14px;
+  color: #1e293b;
+  margin-bottom: 2px;
+}
+
+.wh-desc {
+  display: block;
+  font-size: 11.5px;
+  color: #64748b;
+}
+
+/* Print Utilities */
+@media print {
+  .hide-on-print,
+  .management-review-section,
+  .approval-badge-top {
+    display: none !important;
+  }
+}
+
+/* Warehouse Badge in metadata */
+.warehouse-badge {
+  display: inline-flex;
+  align-items: center;
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* ─── Custom Toast Notification (Top Right) ─── */
+.toast-container {
+  position: fixed;
+  top: 30px;
+  right: 30px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 18px 24px;
+  border-radius: 12px;
+  color: white;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+  animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  max-width: 420px;
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.toast-container.success {
+  background: #10b981; /* Premium Emerald */
+}
+
+.toast-container.error {
+  background: #ef4444; /* Bold Red */
+}
+
+.toast-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 22px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+  padding: 0;
+  margin: 0;
+  line-height: 1;
+}
+
+.toast-close:hover {
+  opacity: 1;
+}
+
+/* ─── PO Reception Checkbox Controls ─── */
+.po-reception-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.action-checkbox-wrap {
+  display: flex;
+  align-items: center;
+}
+
+.premium-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #2563eb;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.premium-checkbox-label:hover:not(.disabled) {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.premium-checkbox-label.disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.premium-checkbox-label input {
+  display: none;
+}
+
+.checkbox-box {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.checkbox-box svg {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.premium-checkbox-label:hover .checkbox-box {
+  border-color: white;
+}
+
+.checkbox-box.checked {
+  background: white;
+  border-color: white;
+}
+
+.checkbox-box.checked svg {
+  opacity: 1;
+  stroke: #2563eb;
+}
+
+.label-content {
+  display: flex;
+  align-items: center;
+}
+
+.label-content.left-text {
+  margin-right: 0;
+}
+
+/* Return Label Specifics */
+.return-label {
+  background: #0f172a; /* Dark Slate */
+  font-size: 13px;
+  padding: 6px 14px;
+}
+
+.return-label:hover:not(.disabled) {
+  background: #1e293b;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.2);
+}
+
+.return-label .checkbox-box {
+  order: 2; /* Move checkbox to the right */
+}
+
+.return-label .label-content {
+  order: 1; /* Move text to the left */
+}
+
+/* ─── Top Return Alert Styling ─── */
+.top-return-alert {
+  margin-bottom: 20px;
+  animation: slideDown 0.4s ease-out;
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.top-priority {
+  width: 100%;
+}
+
+.top-priority .return-label {
+  width: 100%;
+  justify-content: space-between;
+  padding: 14px 24px;
+  background: #fdf2f2;
+  color: #991b1b;
+  border: 1px solid #fee2e2;
+  border-radius: 8px;
+  font-size: 15px;
+}
+
+.top-priority .return-label:hover:not(.disabled) {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  box-shadow: 0 4px 12px rgba(153, 27, 27, 0.08);
+}
+
+.top-priority .checkbox-box {
+  background: white;
+  border-color: #991b1b;
+  width: 24px;
+  height: 24px;
+}
+
+.top-priority input:checked + .checkbox-box {
+  background: #991b1b;
+}
+
+.top-priority .checkbox-box svg {
+  stroke: #991b1b;
+}
+
+.top-priority label.disabled {
+  background: #f1f5f9;
+  color: #64748b;
+  border-color: #e2e8f0;
+}
+/* ─── Loading States ─── */
+.loader-container {
+  padding: 80px 0;
+  text-align: center;
+}
+
+.premium-loader {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f1f5f9;
+  border-top: 4px solid #2563eb;
+  border-radius: 50%;
+  margin: 0 auto 20px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.top-return-alert {
+  display: flex;
+  align-items: center;
+  margin-left: 10px;
+}
+
+.return-received-label {
+  background: #fee2e2 !important;
+  color: #991b1b !important;
+  border: 2px solid #ef4444 !important;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  padding: 10px 18px !important;
+  border-radius: 8px !important;
+  gap: 12px !important;
+  font-weight: 800 !important;
+}
+
+.return-received-label .checkbox-box {
+  background: white;
+  border-color: #991b1b;
+}
+
+.return-received-label .checkbox-box.checked {
+  background: #991b1b;
+  border-color: #991b1b;
+}
+
+.return-received-label .checkbox-box.checked svg {
+  opacity: 1;
+  stroke: white;
+}
+
+.return-received-label.disabled {
+  background: #f1f5f9 !important;
+  color: #64748b !important;
+  border-color: #e2e8f0 !important;
+  opacity: 0.8;
+}
+
+.return-received-label.disabled .checkbox-box {
+  border-color: #cbd5e1;
+}
+
+.return-received-label.disabled .checkbox-box.checked {
+  background: #cbd5e1;
+  border-color: #cbd5e1;
+}

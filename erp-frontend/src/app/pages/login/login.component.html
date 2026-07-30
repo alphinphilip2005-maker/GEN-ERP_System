@@ -1,0 +1,123 @@
+<div class="login-root">
+  <!-- Left Panel -->
+  <div class="login-left">
+    <div class="brand">
+      <img src="assets/images/genrobotics_logo.png" alt="Gen Robotics" class="brand-logo">
+    </div>
+
+    <div class="hero-content">
+      <div class="hero-illustration">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="hero-graphic">
+          <svg viewBox="0 0 320 280" width="320" height="280">
+            <defs>
+              <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#3b82f6"/>
+                <stop offset="100%" style="stop-color:#8b5cf6"/>
+              </linearGradient>
+            </defs>
+            <!-- Grid Base -->
+            <rect x="40" y="180" width="240" height="12" rx="6" fill="url(#g1)" opacity="0.3"/>
+            <!-- Bar Charts -->
+            <rect x="60" y="110" width="30" height="70" rx="6" fill="#3b82f6" opacity="0.8"/>
+            <rect x="110" y="80" width="30" height="100" rx="6" fill="#f59e0b" opacity="0.9"/>
+            <rect x="160" y="130" width="30" height="50" rx="6" fill="#10b981" opacity="0.8"/>
+            <rect x="210" y="90" width="30" height="90" rx="6" fill="#8b5cf6" opacity="0.8"/>
+            <!-- Trend Line -->
+            <polyline points="75,115 125,85 175,135 225,95" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="5,3"/>
+            <!-- Dots -->
+            <circle cx="75" cy="115" r="5" fill="#f59e0b"/>
+            <circle cx="125" cy="85" r="5" fill="#f59e0b"/>
+            <circle cx="175" cy="135" r="5" fill="#f59e0b"/>
+            <circle cx="225" cy="95" r="5" fill="#f59e0b"/>
+            <!-- Floating cards -->
+            <rect x="10" y="40" width="90" height="50" rx="8" fill="white" opacity="0.15"/>
+            <rect x="220" y="30" width="90" height="50" rx="8" fill="white" opacity="0.15"/>
+            <text x="55" y="72" text-anchor="middle" fill="white" font-size="11" font-weight="600" opacity="0.9">+24.5%</text>
+            <text x="265" y="62" text-anchor="middle" fill="white" font-size="11" font-weight="600" opacity="0.9">Orders</text>
+          </svg>
+        </div>
+      </div>
+
+      <h1 class="hero-title">Welcome to Gen ERP</h1>
+      <p class="hero-subtitle">A unified platform to manage your enterprise operations, inventory, procurement, and production.</p>
+
+      <div class="features">
+        <div class="feature-item">
+          <span class="feature-dot"></span>
+          <span>Real-time Inventory Tracking</span>
+        </div>
+        <div class="feature-item">
+          <span class="feature-dot"></span>
+          <span>Purchase Order Management</span>
+        </div>
+        <div class="feature-item">
+          <span class="feature-dot"></span>
+          <span>Role-based Access Control</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Panel — Login Form -->
+  <div class="login-right">
+    <div class="login-card">
+      <div class="login-card-header">
+        <h2>Sign In</h2>
+        <p>Enter your credentials to access the dashboard</p>
+      </div>
+
+      <form (ngSubmit)="onSubmit()" #loginForm="ngForm" class="login-form">
+
+        <div class="alert-error" *ngIf="errorMsg">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          {{ errorMsg }}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="email">Email Address</label>
+          <div class="input-wrapper">
+            <svg class="input-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+            </svg>
+            <input id="email" type="email" class="form-control with-icon" name="email" [(ngModel)]="email"
+              placeholder="Enter your email" required autocomplete="email">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <div class="input-wrapper">
+            <svg class="input-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <input id="password" [type]="showPassword ? 'text' : 'password'" class="form-control with-icon with-right-icon"
+              name="password" [(ngModel)]="password" placeholder="••••••••" required autocomplete="current-password">
+            <button type="button" class="toggle-pass-btn" (click)="togglePassword()">
+              <!-- Closed Eye (Slashed) - Show when password is dots -->
+              <svg *ngIf="!showPassword" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+              </svg>
+              <!-- Open Eye - Show when password is visible -->
+              <svg *ngIf="showPassword" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-login" [disabled]="loading || !loginForm.valid">
+          <span *ngIf="!loading">Sign In</span>
+          <span *ngIf="loading" class="loading-state">
+            <span class="spinner"></span> Signing in...
+          </span>
+        </button>
+      </form>
+    </div>
+  </div>
+</div>

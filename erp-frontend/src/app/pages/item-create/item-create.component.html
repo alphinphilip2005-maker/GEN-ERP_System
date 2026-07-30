@@ -1,0 +1,133 @@
+<div class="page-wrapper">
+  <div class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Add New Items</h1>
+      <p class="page-subtitle">Create a single inventory item or upload multiple items via Excel.</p>
+    </div>
+    <div class="header-right">
+      <button class="btn btn-outline" routerLink="/admin/items">
+        Back to Items
+      </button>
+    </div>
+  </div>
+
+  <div class="alert-success" *ngIf="success">{{ success }}</div>
+  <div class="alert-error" *ngIf="error">{{ error }}</div>
+
+  <div class="create-grid">
+    <!-- Manual Entry Form -->
+    <div class="card form-card">
+      <div class="card-header">
+        <h3>Manual Item Entry</h3>
+      </div>
+      <form (ngSubmit)="onSubmit()" #itemForm="ngForm" class="form-content">
+        <div class="form-group-row">
+          <div class="form-group">
+            <label class="form-label">Item Code <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" name="item_code" [(ngModel)]="item.item_code" (blur)="checkCode()" placeholder="e.g. RM-1001" required>
+            <div class="text-danger small mt-1" *ngIf="codeExists">
+              Duplicate Item Code found in the system.
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Item Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" name="item_name" [(ngModel)]="item.item_name" placeholder="e.g. Aluminum Sheet" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Item Specification</label>
+          <textarea class="form-control" name="description" [(ngModel)]="item.description" rows="3" placeholder="Enter item specifications..."></textarea>
+        </div>
+
+        <div class="form-group-row">
+          <div class="form-group">
+            <label class="form-label">Category <span class="text-danger">*</span></label>
+            <div class="select-wrapper">
+              <select class="form-control" name="category" [(ngModel)]="item.category" required>
+                <option value="" disabled>Select Category</option>
+                <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+              </select>
+              <svg class="select-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">UOM <span class="text-danger">*</span></label>
+            <div class="select-wrapper">
+              <select class="form-control" name="uom" [(ngModel)]="item.uom" required>
+                <option value="" disabled>Select UOM</option>
+                <option *ngFor="let uom of uoms" [value]="uom">{{ uom }}</option>
+              </select>
+              <svg class="select-arrow" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group-row">
+          <div class="form-group">
+            <label class="form-label">Material Type</label>
+            <input type="text" class="form-control" name="material" [(ngModel)]="item.material" placeholder="e.g. MS, SS, Aluminum">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Brand</label>
+            <input type="text" class="form-control" name="brand" [(ngModel)]="item.brand" placeholder="e.g. Tata, Reliance">
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" [disabled]="!itemForm.valid || submitting || codeExists">
+            <span *ngIf="!submitting">Save Item</span>
+            <span *ngIf="submitting">Processing...</span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Excel Upload Section -->
+    <div class="card upload-card">
+      <div class="card-header">
+        <h3>Bulk Upload via Excel</h3>
+      </div>
+      <div class="upload-content">
+        <div class="upload-info">
+          <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#3b82f6" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg>
+          <p class="upload-title">Drop your Excel file here</p>
+          <p class="upload-subtitle">Only .xlsx or .xls files are supported.</p>
+        </div>
+
+        <div class="file-picker">
+          <input type="file" id="excelFile" (change)="onFileSelected($event)" accept=".xlsx, .xls" hidden>
+          <label for="excelFile" class="btn btn-outline btn-full">
+            {{ selectedFile ? selectedFile.name : 'Select Excel File' }}
+          </label>
+        </div>
+
+        <div class="upload-actions" *ngIf="selectedFile">
+          <button class="btn btn-primary btn-full" (click)="onUpload()" [disabled]="uploading">
+            <span *ngIf="!uploading">Upload and Process</span>
+            <span *ngIf="uploading">Uploading...</span>
+          </button>
+        </div>
+
+        <div class="excel-guide">
+          <div class="guide-header">
+            <h4>Required Excel Format:</h4>
+            <button class="btn-text" (click)="downloadTemplate()">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download Template
+            </button>
+          </div>
+          <ul>
+            <li><strong>Item Code</strong> (Unique identifier)</li>
+            <li><strong>Item Name</strong> (Required)</li>
+            <li><strong>Description</strong></li>
+            <li><strong>Category</strong> (e.g., Raw Material)</li>
+            <li><strong>UOM</strong> (e.g., PCS, KG)</li>
+            <li><strong>Brand</strong></li>
+            <li><strong>Material</strong> (e.g., Metal, Plastic)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

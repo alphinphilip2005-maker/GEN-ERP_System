@@ -1,0 +1,420 @@
+<div class="page-wrapper">
+
+  <div class="header-section" *ngIf="!loading && project">
+    <div class="header-content">
+      <h1 class="page-title">
+        Project Name : <span>{{ project.project_name }}</span>
+        <span style="font-weight: 500; color: #64748b; margin-left: 8px;">(Official: r{{ project.current_revision
+          }})</span>
+
+        <!-- Status of the CURRENT WORKING version -->
+        <span class="status-badge" [ngClass]="'status-' + (latestStatus || 'Pending').toLowerCase()"
+          style="margin-left: 12px; font-size: 14px; padding: 6px 16px; border-radius: 20px; vertical-align: middle;">
+          {{ latestStatus || 'Pending' }}
+        </span>
+      </h1>
+      <button class="btn btn-outline" routerLink="/admin/bom">Back to List</button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs-container">
+      <div class="tab" [class.active]="activeTab === 'items'" (click)="activeTab = 'items'">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+          <line x1="9" y1="3" x2="9" y2="21" />
+        </svg>
+        BOM Items
+      </div>
+      <div class="tab" [class.active]="activeTab === 'history'" (click)="activeTab = 'history'">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
+        </svg>
+        Revision History
+      </div>
+    </div>
+  </div>
+
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Loading project details...</p>
+  </div>
+
+  <div class="toast-container" *ngIf="success || error">
+    <div class="toast toast-success" *ngIf="success">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+      {{ success }}
+    </div>
+    <div class="toast toast-error" *ngIf="error">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      {{ error }}
+    </div>
+  </div>
+
+  <!-- Content Section -->
+  <div class="card table-card" *ngIf="!loading && project">
+
+    <!-- BOM Items Tab -->
+    <div class="tab-content" *ngIf="activeTab === 'items'">
+
+      <!-- Working Version Banner -->
+      <div class="working-rev-banner" *ngIf="hasPendingRevision()">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
+        </svg>
+        <span>
+          Pending changes are saved against <strong>Revision {{ project.current_revision }}</strong>.
+          The revision number will increase only after approval from History.
+        </span>
+      </div>
+
+      <!-- Actions Bar -->
+      <div class="table-actions-right">
+        <h3 style="margin: 0; font-size: 16px; color: #1e293b; font-weight: 600;">
+          Bill of Materials
+          <span style="font-weight: 400; color: #64748b; margin-left: 8px;">
+            <ng-container *ngIf="latestStatus === 'Approved'"> (Revision {{ project.current_revision }})</ng-container>
+            <ng-container *ngIf="latestStatus === 'Pending'"> (Pending update to Revision {{ project.current_revision
+              }})</ng-container>
+            <ng-container *ngIf="latestStatus === 'Rejected'"> (Rejected update to Revision {{ project.current_revision
+              }})</ng-container>
+          </span>
+        </h3>
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <input #excelInput type="file" (change)="onExcelUpload($event)" accept=".xlsx, .xls" style="display: none;">
+          <button class="btn btn-outline" (click)="excelInput.click()" [disabled]="isParsingExcel"
+            *ngIf="canEdit || canCreate" style="display: flex; align-items: center; gap: 8px; border-radius: 8px;">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            {{ isParsingExcel ? 'Parsing...' : 'Import from Excel' }}
+          </button>
+          <button class="btn btn-outline" (click)="downloadTemplate()" title="Download Official Excel Template"
+            style="display: flex; align-items: center; gap: 8px; border-radius: 8px; color: #475569;">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Template
+          </button>
+          <button class="btn btn-primary" (click)="openAddItemModal()" *ngIf="canCreate"
+            style="display: flex; align-items: center; gap: 6px; border-radius: 8px;">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Add Items
+          </button>
+        </div>
+      </div>
+
+      <!-- Excel Validation Report -->
+      <div class="excel-report" *ngIf="excelMissingItems.length > 0">
+        <div class="report-header">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
+          <h4>BOM Import Report - Missing in Item Master</h4>
+        </div>
+        <p>The following {{ excelMissingItems.length }} codes were found in the Excel but are NOT in your Item Master.
+          These items were skipped:</p>
+        <div class="report-list">
+          <span class="report-item" *ngFor="let missing of excelMissingItems">
+            <span class="report-meta">Row {{ missing.row }} on "{{ missing.sheet }}":</span>
+            <span class="report-code">{{ missing.code }}</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Main BOM Pagination (Moved to Top) -->
+      <div class="pagination-controls" *ngIf="bomItems.length > bomPageSize" style="border-top: none; border-bottom: 1px solid #f1f5f9; justify-content: flex-end; padding: 10px 24px;">
+        <button class="page-btn" (click)="bomCurrentPage = bomCurrentPage - 1" [disabled]="bomCurrentPage === 1">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
+        <span class="page-info">Page {{ bomCurrentPage }} of {{ totalBomPages }}</span>
+        <button class="page-btn" (click)="bomCurrentPage = bomCurrentPage + 1" [disabled]="bomCurrentPage === totalBomPages">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="table-container">
+        <table class="data-table bom-table">
+          <thead style="position: sticky; top: 0; z-index: 10;">
+            <tr>
+              <th class="col-sl">SL. NO.</th>
+              <th class="col-code">Item Code</th>
+              <th class="col-name">Item Name</th>
+              <th class="col-spec">Specification</th>
+              <th class="col-mat">Material</th>
+              <th class="col-qty">QTY</th>
+              <th class="col-uom">UOM</th>
+              <th class="col-actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of paginatedBomItems; let i = index">
+              <td class="col-sl">{{ ((bomCurrentPage - 1) * bomPageSize + i + 1).toString().padStart(2, '0') }}</td>
+              <td class="col-code">
+                <span class="item-code-text">{{ item.item_code }}</span>
+              </td>
+              <td class="col-name">{{ item.item_name }}</td>
+              <td class="col-spec">{{ item.description || '—' }}</td>
+              <td class="col-mat">
+                <span class="badge badge-blue" *ngIf="item.material">{{ item.material }}</span>
+                <span class="no-data" *ngIf="!item.material">—</span>
+              </td>
+              <td class="col-qty">
+                <input type="number" class="qty-input" [(ngModel)]="item.quantity" min="1"
+                  (change)="recalculatePrice(item)" [disabled]="!canEdit">
+              </td>
+              <td class="col-uom">{{ item.uom || '—' }}</td>
+              <td class="col-actions">
+                <div class="actions-wrapper">
+                  <button class="action-btn delete" (click)="removeItem(i)" title="Remove from BOM" *ngIf="canDelete">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <tr *ngIf="bomItems.length < 5" class="empty-row-pad">
+              <td colspan="8">&nbsp;</td>
+            </tr>
+
+            <tr *ngIf="bomItems.length === 0">
+              <td colspan="8" class="empty-state">
+                <p>No items added to this BOM yet. Search and add items from the top right.</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+      </div>
+
+      <!-- Save Button Wrapper -->
+      <div class="save-wrapper" *ngIf="bomItems.length > 0 && canEdit">
+        <button class="btn btn-outline" (click)="saveDraftBOM()" [disabled]="submitting"
+          style="margin-right: 12px;">Save Draft</button>
+        <button class="btn btn-primary" (click)="openRevisionModal()">Release New Revision</button>
+      </div>
+
+    </div>
+
+    <!-- Revision History Tab -->
+    <div class="tab-content" *ngIf="activeTab === 'history'">
+      <!-- History Pagination (Moved to Top) -->
+      <div class="pagination-controls" *ngIf="revisions.length > historyPageSize" style="border-top: none; border-bottom: 1px solid #f1f5f9; justify-content: flex-end; padding: 10px 24px;">
+        <button class="page-btn" (click)="historyCurrentPage = historyCurrentPage - 1" [disabled]="historyCurrentPage === 1">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
+        <span class="page-info">Page {{ historyCurrentPage }} of {{ totalHistoryPages }}</span>
+        <button class="page-btn" (click)="historyCurrentPage = historyCurrentPage + 1" [disabled]="historyCurrentPage === totalHistoryPages">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </button>
+      </div>
+
+      <table class="data-table history-table">
+        <thead>
+          <tr>
+            <th class="text-center">Sl NO:</th>
+            <th class="text-center">Revision No:</th>
+            <th class="text-center">Change Description</th>
+            <th class="text-center">Revised On</th>
+            <th class="text-center">Revised By</th>
+            <th class="text-center">Status</th>
+            <th class="text-center">Approver</th>
+            <th class="text-center">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let rev of paginatedHistoryItems; let i = index">
+            <td class="text-center">{{ ((historyCurrentPage - 1) * historyPageSize + i + 1).toString().padStart(2, '0') }}</td>
+            <td class="text-center">{{ getRevisionLabel(rev) }}</td>
+            <td class="text-center">{{ rev.change_description }}</td>
+            <td class="text-center">{{ rev.revised_on | date:'dd/MM/yyyy' }}</td>
+            <td class="text-center">{{ rev.revised_by || '----------' }}</td>
+            <td class="text-center">
+              <span class="badge" [class.badge-success]="rev.status === 'Approved'"
+                [class.badge-blue]="rev.status === 'Pending'" [class.badge-danger]="rev.status === 'Rejected'"
+                style="font-size: 11px; padding: 4px 10px; border-radius: 12px; font-weight: 600; text-transform: uppercase;">
+                {{ rev.status || 'Pending' }}
+              </span>
+            </td>
+            <td class="text-center">
+              <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                <!-- Persistent Checkbox for immediate visual feedback -->
+                <input type="checkbox" *ngIf="canApprove" [checked]="rev.is_approved"
+                  (click)="openApprovalModal(rev); $event.preventDefault()"
+                  [disabled]="rev.is_approved || rev.status === 'Approved'"
+                  style="cursor: pointer; width: 18px; height: 18px; border-radius: 4px; accent-color: #10b981;">
+
+                <span *ngIf="rev.is_approved" class="text-success"
+                  style="font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 4px;">
+                  <!-- Only show the tick SVG if the user CANNOT approve (i.e. they don't have the checkbox) -->
+                  <svg *ngIf="!canApprove" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor"
+                    stroke-width="3">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  {{ rev.approved_by }}
+                </span>
+
+                <span *ngIf="!rev.is_approved && !canApprove" class="text-secondary small">Pending...</span>
+              </div>
+            </td>
+            <td class="text-center">
+              <a class="btn-icon" [routerLink]="['/admin/bom', projectId, 'revision', rev.id]"
+                title="Review Items & Changes"
+                style="padding: 6px; color: #6366f1; background: #eef2ff; border-radius: 6px; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              </a>
+            </td>
+          </tr>
+
+          <tr *ngIf="revisions.length < 5" class="empty-row-pad">
+            <td colspan="6">&nbsp;</td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+
+  </div>
+</div>
+
+<!-- Approval Modal -->
+<div class="modal-overlay" *ngIf="showApprovalModal && revisionPendingApproval">
+  <div class="modal-card approval-modal-card">
+    <div class="modal-header">
+      <h3>Approve Revision {{ getRevisionLabel(revisionPendingApproval) }}</h3>
+      <button class="close-btn" (click)="closeApprovalModal()">x</button>
+    </div>
+    <div class="modal-body">
+      <p class="approval-message">
+        This will approve revision <strong>{{ getRevisionLabel(revisionPendingApproval) }}</strong> for
+        <strong>{{ project.project_name }}</strong>.
+      </p>
+      <p class="approval-subtext">
+        The official revision number will increase only after you confirm this approval.
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" (click)="closeApprovalModal()" [disabled]="submitting">Cancel</button>
+      <button class="btn btn-primary" (click)="confirmApproval()" [disabled]="submitting">
+        {{ submitting ? 'Approving...' : 'Confirm Approval' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Revision Modal -->
+<div class="modal-overlay" *ngIf="showRevisionModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>Save Update to Revision {{ project.current_revision }}</h3>
+      <button class="close-btn" (click)="closeRevisionModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Revision History Comments <span class="text-danger">*</span></label>
+        <textarea class="form-control" rows="4" [(ngModel)]="revisionComment"
+          placeholder="Explain what changed... e.g., 'As a part of internal audit, added Springs'"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" (click)="closeRevisionModal()">Cancel</button>
+      <button class="btn btn-primary" (click)="saveBOM()" [disabled]="!revisionComment.trim() || submitting">
+        {{ submitting ? 'Saving...' : 'Confirm Save' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Item Master Modal -->
+<div class="modal-overlay" *ngIf="showAddItemModal">
+  <div class="modal-card" style="width: 600px; max-height: 80vh; display: flex; flex-direction: column;">
+    <div class="modal-header">
+      <h3>Select Items from Master</h3>
+      <button class="close-btn" (click)="closeAddItemModal()">×</button>
+    </div>
+
+    <div class="modal-body" style="flex: 1; overflow: hidden; display: flex; flex-direction: column; padding: 24px;">
+      <div class="search-box" style="margin-bottom: 16px;">
+        <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+          stroke-width="2">
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <input type="text" placeholder="Search by code / item" [(ngModel)]="itemSearchQuery"
+          (input)="filterSearchItems()" autocomplete="off">
+      </div>
+
+      <!-- Master Items Pagination (Moved to Top Right) -->
+      <div class="modal-pagination-top" style="display: flex; justify-content: flex-end; align-items: center; padding: 12px 24px; border-bottom: 1px solid #f1f5f9; background: #f8fafc;" *ngIf="filteredItems.length > masterPageSize">
+        <div style="display: flex; align-items: center; gap: 15px; background: white; padding: 4px 12px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+          <span class="page-info" style="font-size: 12px; font-weight: 700; color: #1e293b;">Page {{ masterCurrentPage }} of {{ totalMasterPages }}</span>
+          <div class="pagination-btns" style="display: flex; gap: 8px;">
+            <button class="page-btn" (click)="masterCurrentPage = masterCurrentPage - 1" [disabled]="masterCurrentPage === 1" style="padding: 4px 8px; border: none; background: #f1f5f9; border-radius: 4px; cursor: pointer; display: flex; align-items: center;">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6" /></svg>
+            </button>
+            <button class="page-btn" (click)="masterCurrentPage = masterCurrentPage + 1" [disabled]="masterCurrentPage === totalMasterPages" style="padding: 4px 8px; border: none; background: #f1f5f9; border-radius: 4px; cursor: pointer; display: flex; align-items: center;">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6" /></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div style="flex: 1; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 4px;">
+        <table class="data-table">
+          <thead style="position: sticky; top: 0; background: #eff6ff; z-index: 10;">
+            <tr>
+              <th>Item Code</th>
+              <th>Name</th>
+              <th>Specification</th>
+              <th class="text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of paginatedMasterItems" style="border-bottom: 1px solid #e2e8f0;">
+              <td><strong>{{ item.item_code }}</strong></td>
+              <td>{{ item.item_name }}</td>
+              <td>{{ item.description || '—' }}</td>
+              <td class="text-center">
+                <button class="btn btn-primary" style="padding: 4px 12px; font-size: 12px;"
+                  (click)="selectItem(item)">Add</button>
+              </td>
+            </tr>
+            <tr *ngIf="filteredItems.length === 0">
+              <td colspan="4" class="text-center empty-state" style="padding: 24px;">No items found in Master.</td>
+            </tr>
+          </tbody>
+        </table>
+
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-primary" (click)="closeAddItemModal()">Done Checking</button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,45 @@
+<h2>Data Sourcing Workflow</h2>
+<p class="subtitle">How should POs appear in the Payment module?</p>
+
+<div class="options">
+  <div class="option" data-choice="auto" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Automatic Population</h3>
+      <p>Every <b>Approved PO</b> automatically creates a record in the Payment list. Finance just needs to manage the settlement.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="manual" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Manual Selection</h3>
+      <p>Finance clicks "Add Payment" and selects an <b>Approved PO</b> from a dropdown to begin tracking its payment schedule.</p>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 30px;">
+  <div class="mockup">
+    <div class="mockup-header">Proposed Logic</div>
+    <div class="mockup-body">
+      <div style="display: flex; gap: 20px; align-items: center; justify-content: center; padding: 20px;">
+        <div class="card" style="width: 150px; text-align: center; border: 2px dashed #94a3b8;">
+          <div class="label">Step 1</div>
+          <div style="font-weight: 700;">PO Approved</div>
+        </div>
+        <div style="font-size: 24px; color: #3b82f6;">&rarr;</div>
+        <div class="card" style="width: 150px; text-align: center; background: #eff6ff; border: 2px solid #3b82f6;">
+          <div class="label">Step 2</div>
+          <div style="font-weight: 700;">Payment Entry</div>
+          <div class="subtitle" style="font-size: 10px;">Status: OPEN</div>
+        </div>
+        <div style="font-size: 24px; color: #3b82f6;">&rarr;</div>
+        <div class="card" style="width: 150px; text-align: center; border: 2px dashed #94a3b8;">
+          <div class="label">Step 3</div>
+          <div style="font-weight: 700;">Settlement</div>
+          <div class="subtitle" style="font-size: 10px;">Cash/Credit</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

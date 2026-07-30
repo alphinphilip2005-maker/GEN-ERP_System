@@ -1,0 +1,175 @@
+<div class="page-wrapper">
+  
+  <div class="page-header" *ngIf="!loading">
+    <div class="header-left">
+      <h1 class="page-title">Edit User</h1>
+      <p class="page-subtitle">Modify user profile, designation, and system access rights.</p>
+    </div>
+    <div class="header-right">
+      <button class="btn btn-primary" type="button" (click)="openRightsModal()">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        Manage User Rights
+      </button>
+    </div>
+  </div>
+
+  <div class="loading-overlay" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Loading user data...</p>
+  </div>
+
+  <div class="card edit-card" *ngIf="!loading">
+    <form (ngSubmit)="onSubmit()" #userForm="ngForm" class="edit-form-content">
+      
+      <div class="alert-error" *ngIf="error">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        {{ error }}
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Full Name <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" name="name" [(ngModel)]="user.name" placeholder="Enter Full Name" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Employee ID <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" name="employee_id" [(ngModel)]="user.employee_id" placeholder="Enter Employee ID" autocomplete="off" data-form-type="other" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email ID <span class="text-danger">*</span></label>
+          <input type="email" class="form-control" name="email" [(ngModel)]="user.email" placeholder="Enter Email Address" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Phone Number</label>
+          <input type="text" class="form-control" name="phone" [(ngModel)]="user.phone" placeholder="Enter Phone Number" (input)="onPhoneInput($event)">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Designation <span class="text-danger">*</span></label>
+          <div class="select-wrapper">
+            <select class="form-control" name="designation" [(ngModel)]="user.designation" required>
+              <option value="" disabled>Select Designation</option>
+              <option *ngFor="let des of designations" [value]="des">{{ des }}</option>
+            </select>
+            <svg class="select-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Department <span class="text-danger">*</span></label>
+          <div class="select-wrapper">
+            <select class="form-control" name="department" [(ngModel)]="user.department" required>
+              <option value="" disabled>Select Department</option>
+              <option *ngFor="let dep of departments" [value]="dep">{{ dep }}</option>
+            </select>
+            <svg class="select-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Update Password</label>
+          <div class="password-wrapper" style="position: relative;">
+            <input [type]="showPassword ? 'text' : 'password'" class="form-control" name="password" [(ngModel)]="user.password" placeholder="Enter new password (optional)" autocomplete="new-password" [required]="user.confirmPassword ? true : false">
+            <button type="button" class="password-toggle" (click)="showPassword = !showPassword" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer;">
+              <svg *ngIf="!showPassword" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg *ngIf="showPassword" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Confirm Password</label>
+          <div class="password-wrapper" style="position: relative;">
+            <input [type]="showConfirmPassword ? 'text' : 'password'" class="form-control" name="confirmPassword" [(ngModel)]="user.confirmPassword" placeholder="Confirm new password" [required]="user.password ? true : false">
+            <button type="button" class="password-toggle" (click)="showConfirmPassword = !showConfirmPassword" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer;">
+              <svg *ngIf="!showConfirmPassword" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg *ngIf="showConfirmPassword" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-outline btn-lg" routerLink="/admin/users" style="margin-right: 12px;">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-lg" [disabled]="!userForm.valid || submitting">
+          <span *ngIf="!submitting">Update User</span>
+          <span *ngIf="submitting">Updating...</span>
+        </button>
+      </div>
+    </form>
+  </div>
+
+</div>
+
+<!-- User Rights Modal -->
+<div class="modal-backdrop" *ngIf="showRightsModal">
+  <div class="modal-box rights-modal">
+    <div class="modal-header">
+      <h3>Configure Access Rights</h3>
+      <button class="close-modal-btn" (click)="cancelRightsModal()">&times;</button>
+    </div>
+    
+    <div class="modal-body">
+      <div class="rights-header-actions">
+        <button class="btn btn-ghost btn-sm" (click)="selectAll()">Select All Modules</button>
+      </div>
+
+      <div class="rights-accordion">
+        <div class="accordion-item" *ngFor="let right of moduleRights" [class.expanded]="right.expanded">
+          <div class="accordion-header" (click)="toggleExpand(right)">
+            <div class="header-left-col">
+              <div class="custom-checkbox" (click)="$event.stopPropagation(); toggleModule(right)">
+                <input type="checkbox" [checked]="isModuleChecked(right)">
+                <span class="checkmark"></span>
+              </div>
+              <span class="module-title">{{ right.module_name }}</span>
+            </div>
+            <div class="header-right-col">
+              <svg class="chevron" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </div>
+          </div>
+          
+          <div class="accordion-content" *ngIf="right.expanded">
+            <div class="rights-checkbox-grid">
+              <label class="custom-checkbox">
+                <input type="checkbox" [(ngModel)]="right.can_create">
+                <span class="checkmark"></span>
+                <span class="cb-label">New / Create</span>
+              </label>
+              <label class="custom-checkbox">
+                <input type="checkbox" [(ngModel)]="right.can_view">
+                <span class="checkmark"></span>
+                <span class="cb-label">View</span>
+              </label>
+              <label class="custom-checkbox">
+                <input type="checkbox" [(ngModel)]="right.can_edit">
+                <span class="checkmark"></span>
+                <span class="cb-label">Edit</span>
+              </label>
+              <label class="custom-checkbox">
+                <input type="checkbox" [(ngModel)]="right.can_delete">
+                <span class="checkmark"></span>
+                <span class="cb-label">Delete</span>
+              </label>
+              <label class="custom-checkbox">
+                <input type="checkbox" [(ngModel)]="right.can_approve">
+                <span class="checkmark"></span>
+                <span class="cb-label">Approve</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" (click)="cancelRightsModal()">Cancel</button>
+      <button class="btn btn-primary" (click)="closeRightsModal()">Done</button>
+    </div>
+  </div>
+</div>

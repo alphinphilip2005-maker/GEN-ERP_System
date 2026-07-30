@@ -1,0 +1,271 @@
+<div class="page-wrapper">
+  <div class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">{{ isEditMode ? 'Edit Purchase Order' : 'Generate Purchase Order' }}</h1>
+      <p class="page-subtitle">Standard workflow from Quotation (PQ) to Vendor PO</p>
+    </div>
+    <div class="header-right">
+      <button type="button" class="btn btn-outline" routerLink="/admin/po">
+        Back to List
+      </button>
+    </div>
+  </div>
+
+  <div class="card create-card">
+    <form (ngSubmit)="onSubmit()" #poForm="ngForm" class="create-form-content">
+
+      <div class="alert-error" *ngIf="error">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="8" x2="12" y2="12" />
+          <line x1="12" y1="16" x2="12.01" y2="16" />
+        </svg>
+        {{ error }}
+      </div>
+
+      <div class="two-column-grid">
+        <!-- Row 1 -->
+        <div class="form-group">
+          <label class="form-label">PO Date <span class="req">*</span></label>
+          <input type="date" class="form-control" name="po_date" [(ngModel)]="po.po_date" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sanction Code</label>
+          <input type="text" class="form-control" name="sanction_code" [(ngModel)]="po.sanction_code" placeholder="Optional Sanction Reference">
+        </div>
+
+        <!-- Row 2 -->
+        <div class="form-group">
+          <label class="form-label">Approved PR Source <span class="req">*</span></label>
+          <div style="position: relative;">
+            <select class="form-control" name="pr_id" [(ngModel)]="po.pr_id" (change)="onPRChange()" required [disabled]="isEditMode" style="-webkit-appearance: none; appearance: none; padding-right: 35px; width: 100%; cursor: pointer;">
+              <option [ngValue]="null">Select PR Reference</option>
+              <option *ngFor="let pr of prs" [ngValue]="pr.id">{{ pr.pr_no }} ({{ pr.Project?.project_name || 'General' }})</option>
+            </select>
+            <div style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #64748b; font-size: 12px;">▼</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Project Name <span class="req">*</span></label>
+          <input type="text" name="project_name" [(ngModel)]="po.project_name" class="form-control" placeholder="Enter Reference Project" readonly style="background: #f8fafc;">
+        </div>
+
+        <div class="form-group">
+          <!-- Spacer to maintain grid -->
+        </div>
+
+        <!-- Separator -->
+        <div style="grid-column: span 2; height: 1px; background: #e2e8f0; margin: 20px 0;"></div>
+
+        <!-- Row 4 -->
+        <div class="form-group">
+          <label class="form-label">Terms</label>
+          <input type="text" class="form-control" name="terms_conditions" [(ngModel)]="po.terms_conditions" placeholder="e.g. Net 30, Delivery in 7 days">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Branch/From</label>
+          <input type="text" class="form-control" name="from_branch" [(ngModel)]="po.from_branch" placeholder="e.g. Main Branch">
+        </div>
+
+        <!-- Row 5 -->
+        <div class="form-group">
+          <label class="form-label">Purchase Manager</label>
+          <input type="text" class="form-control" [value]="initiallyApproved ? getApproverDetails() : 'Pending Manager Approval'" disabled style="background-color: #f8fafc; font-weight: 500; color: #475569;">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Upload Additional Document</label>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <div style="flex: 1; position: relative;">
+              <input type="file" class="form-control" name="upload_po" (change)="onFileSelected($event)" [style.color]="po.upload_po ? 'transparent' : 'inherit'">
+              <span *ngIf="po.upload_po" style="position: absolute; left: 110px; top: 50%; transform: translateY(-50%); font-size: 13px; color: #1e293b; pointer-events: none; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                {{ po.upload_po.split('/').pop() }}
+              </span>
+            </div>
+            <button type="button" class="btn btn-outline" *ngIf="po.upload_po" (click)="viewDocument()" style="padding: 8px 12px; height: 38px;">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Row 6: Items Section (Full Width) -->
+        <div class="items-section" style="grid-column: span 2; margin-top: 30px;">
+          <div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px;">
+            <div class="section-title-wrap">
+              <h3 class="section-main-title">PO Items</h3>
+              <p class="section-subtitle">Select a vendor from the list to generate their specific PO.</p>
+            </div>
+            
+            <div class="vendor-selector-wrap" *ngIf="availableGroups.length > 0" style="display: flex; align-items: center; gap: 20px;">
+              <label class="form-label" style="margin-bottom: 0; white-space: nowrap; font-weight: 700; color: #1e3a8a;">
+                Select Vendor to Generate PO <span style="color: #ef4444;">*</span>
+              </label>
+              <select class="form-control" [(ngModel)]="selectedVendorId" name="selectedVendorId" style="width: 300px; border-color: #2563eb;">
+                <option [ngValue]="null">-- Choose Vendor --</option>
+                <option *ngFor="let g of availableGroups" [ngValue]="g.vendor_id">{{ getVendorName(g.vendor_id) }} ({{ g.items.length }} items)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Single Vendor View -->
+          <div class="vendor-box-container" *ngIf="selectedGroup">
+            <div class="vendor-card-header">
+              <div class="vendor-meta">
+                <span class="group-tag">SELECTED VENDOR</span>
+                <h4 class="vendor-name-title">{{ getVendorName(selectedGroup.vendor_id) }}</h4>
+              </div>
+              <div class="vendor-stats">
+                <span class="item-count-pill">{{ selectedGroup.items.length }} Item(s)</span>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="po-items-table">
+                <thead>
+                  <tr>
+                    <th>Product / Item Description</th>
+                    <th>Qty</th>
+                    <th>UOM</th>
+                    <th>Total (₹)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let item of selectedGroup.items">
+                    <td>
+                      <div class="product-info">
+                        <span class="product-name">{{ item.item_id ? getItemName(item.item_id) : item.custom_item_name }}</span>
+                        <span class="external-badge" *ngIf="!item.item_id">External</span>
+                      </div>
+                    </td>
+                    <td class="font-medium">{{ item.quantity }}</td>
+                    <td>{{ item.uom }}</td>
+                    <td class="font-bold">₹{{ (item.total_price || item.amount) | number:'1.2-2' }}</td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colspan="3" class="text-right font-bold" style="padding-right: 28px;">Total</td>
+                    <td class="font-bold">₹{{ subtotal | number:'1.2-2' }}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+            <!-- Warehouse selection for Create Mode -->
+            <div class="warehouse-selection-create" *ngIf="!isEditMode" style="margin-top: 25px; border-top: 1px solid #f1f5f9; padding-top: 20px; padding-left: 28px; padding-right: 28px; padding-bottom: 25px;">
+              <label class="control-label" style="display: block; font-weight: 700; font-size: 11px; color: #64748b; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;">Target Warehouse</label>
+              <div class="warehouse-options" style="display: flex; gap: 15px;">
+                <label class="wh-option" [class.selected]="selectedWarehouse === 'CDAC'" [style.border-color]="selectedWarehouse === 'CDAC' ? '#16a34a' : '#cbd5e1'" [style.background]="selectedWarehouse === 'CDAC' ? '#f0fdf4' : 'transparent'" style="flex: 1; border: 1px solid #cbd5e1; border-radius: 8px; padding: 15px; cursor: pointer;">
+                  <input type="radio" name="create_warehouse" value="CDAC" [(ngModel)]="selectedWarehouse" style="display: none;">
+                  <span class="wh-card">
+                    <span class="wh-name" style="display: block; font-weight: 700; color: #1e293b;">CDAC</span>
+                    <span class="wh-desc" style="display: block; font-size: 11px; color: #64748b; margin-top: 4px; line-height: 1.4;">Robotics and AI Research Centre 4th Floor, CDAC-Knowledge Resource Centre Building, Technopark Campus, Kazhakkoottam, Kerala 695581</span>
+                  </span>
+                </label>
+                <label class="wh-option" [class.selected]="selectedWarehouse === 'KINFRA'" [style.border-color]="selectedWarehouse === 'KINFRA' ? '#16a34a' : '#cbd5e1'" [style.background]="selectedWarehouse === 'KINFRA' ? '#f0fdf4' : 'transparent'" style="flex: 1; border: 1px solid #cbd5e1; border-radius: 8px; padding: 15px; cursor: pointer;">
+                  <input type="radio" name="create_warehouse" value="KINFRA" [(ngModel)]="selectedWarehouse" style="display: none;">
+                  <span class="wh-card">
+                    <span class="wh-name" style="display: block; font-weight: 700; color: #1e293b;">KINFRA</span>
+                    <span class="wh-desc" style="display: block; font-size: 11px; color: #64748b; margin-top: 4px; line-height: 1.4;">Plot No 42 A, Kinfra International Apparel Park, Thumba, Pallithura, Trivandrum-695586</span>
+                  </span>
+                </label>
+                <label class="wh-option" [class.selected]="selectedWarehouse === 'KSIDC'" [style.border-color]="selectedWarehouse === 'KSIDC' ? '#16a34a' : '#cbd5e1'" [style.background]="selectedWarehouse === 'KSIDC' ? '#f0fdf4' : 'transparent'" style="flex: 1; border: 1px solid #cbd5e1; border-radius: 8px; padding: 15px; cursor: pointer;">
+                  <input type="radio" name="create_warehouse" value="KSIDC" [(ngModel)]="selectedWarehouse" style="display: none;">
+                  <span class="wh-card">
+                    <span class="wh-name" style="display: block; font-weight: 700; color: #1e293b;">KSIDC</span>
+                    <span class="wh-desc" style="display: block; font-size: 11px; color: #64748b; margin-top: 4px; line-height: 1.4;">SDF, 2 Ksidc Investment Zone, Pampampallam P.O, Kanjikode, Palakkad-678621</span>
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Helper states -->
+          <div class="empty-selection-state" *ngIf="availableGroups.length === 0 && !po.pr_id">
+            <h4>No PR Source Selected</h4>
+            <p>Please select an "Approved PR Source" above to automatically load items by vendor.</p>
+          </div>
+
+          <div class="all-done-state" *ngIf="availableGroups.length === 0 && po.pr_id && !isEditMode" style="padding: 40px; text-align: center; background: #f8fafc; border-radius: 12px;">
+            <h4 style="color: #1e293b;">All POs Generated</h4>
+            <p style="color: #64748b;">All items from this PR have been processed into individual Purchase Orders.</p>
+          </div>
+        </div>
+      </div>
+
+
+      <div class="form-actions" style="margin-top: 30px;" *ngIf="!isEditMode">
+        <button type="submit" class="btn btn-primary btn-lg" [disabled]="!poForm.valid || submitting || !selectedVendorId || !selectedWarehouse">
+          <span *ngIf="!submitting">Generate Purchase Order</span>
+          <span *ngIf="submitting">Processing Generation...</span>
+        </button>
+      </div>
+
+      <!-- Management Review Section (for Edit Mode) -->
+      <div class="management-review-section" *ngIf="isEditMode" style="margin-top: 40px; border-top: 2px dashed #e2e8f0; padding-top: 30px;">
+        <div class="review-header" style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#1e3a8a" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+          </svg>
+          <h3 style="color: #1e3a8a; font-size: 18px; margin: 0;">Management Review & Warehouse Assignment</h3>
+        </div>
+        
+        <div class="review-body">
+          <!-- Warehouse selection -->
+          <div class="review-row" style="margin-bottom: 25px;">
+             <label class="control-label" style="display: block; font-weight: 700; font-size: 11px; color: #64748b; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;">Target Warehouse</label>
+              <div class="warehouse-options" style="display: flex; gap: 15px;" [style.pointer-events]="initiallyApproved ? 'none' : 'auto'" [style.opacity]="initiallyApproved ? '0.7' : '1'">
+                <label class="wh-option" [class.selected]="selectedWarehouse === 'CDAC'" [style.border-color]="selectedWarehouse === 'CDAC' ? '#16a34a' : '#cbd5e1'" [style.background]="selectedWarehouse === 'CDAC' ? '#f0fdf4' : 'transparent'" style="flex: 1; border: 1px solid #cbd5e1; border-radius: 8px; padding: 15px; cursor: pointer;">
+                  <input type="radio" name="warehouse" value="CDAC" [(ngModel)]="selectedWarehouse" style="display: none;" [disabled]="initiallyApproved">
+                  <span class="wh-card">
+                    <span class="wh-name" style="display: block; font-weight: 700; color: #1e293b;">CDAC</span>
+                    <span class="wh-desc" style="display: block; font-size: 11px; color: #64748b; margin-top: 4px; line-height: 1.4;">Robotics and AI Research Centre 4th Floor, CDAC-Knowledge Resource Centre Building, Technopark Campus, Kazhakkoottam, Kerala 695581</span>
+                  </span>
+                </label>
+                <label class="wh-option" [class.selected]="selectedWarehouse === 'KINFRA'" [style.border-color]="selectedWarehouse === 'KINFRA' ? '#16a34a' : '#cbd5e1'" [style.background]="selectedWarehouse === 'KINFRA' ? '#f0fdf4' : 'transparent'" style="flex: 1; border: 1px solid #cbd5e1; border-radius: 8px; padding: 15px; cursor: pointer;">
+                  <input type="radio" name="warehouse" value="KINFRA" [(ngModel)]="selectedWarehouse" style="display: none;" [disabled]="initiallyApproved">
+                  <span class="wh-card">
+                    <span class="wh-name" style="display: block; font-weight: 700; color: #1e293b;">KINFRA</span>
+                    <span class="wh-desc" style="display: block; font-size: 11px; color: #64748b; margin-top: 4px; line-height: 1.4;">Plot No 42 A, Kinfra International Apparel Park, Thumba, Pallithura, Trivandrum-695586</span>
+                  </span>
+                </label>
+                <label class="wh-option" [class.selected]="selectedWarehouse === 'KSIDC'" [style.border-color]="selectedWarehouse === 'KSIDC' ? '#16a34a' : '#cbd5e1'" [style.background]="selectedWarehouse === 'KSIDC' ? '#f0fdf4' : 'transparent'" style="flex: 1; border: 1px solid #cbd5e1; border-radius: 8px; padding: 15px; cursor: pointer;">
+                  <input type="radio" name="warehouse" value="KSIDC" [(ngModel)]="selectedWarehouse" style="display: none;" [disabled]="initiallyApproved">
+                  <span class="wh-card">
+                    <span class="wh-name" style="display: block; font-weight: 700; color: #1e293b;">KSIDC</span>
+                    <span class="wh-desc" style="display: block; font-size: 11px; color: #64748b; margin-top: 4px; line-height: 1.4;">SDF, 2 Ksidc Investment Zone, Pampampallam P.O, Kanjikode, Palakkad-678621</span>
+                  </span>
+                </label>
+             </div>
+
+             <!-- Submit button for Purchase Officer -->
+             <div class="officer-actions" *ngIf="isPurchaseOfficer() && !canApprovePO() && !initiallyApproved" style="margin-top: 20px; display: flex; justify-content: flex-end;">
+               <button type="button" class="btn btn-primary" (click)="submitForReview()" [disabled]="!selectedWarehouse || submitting || !hasChanges()" style="padding: 12px 30px; font-weight: 700; background: #0f172a; border: none; border-radius: 10px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);">
+                 <span *ngIf="!submitting">Confirm & Submit for Review</span>
+                 <span *ngIf="submitting">Processing...</span>
+               </button>
+             </div>
+          </div>
+
+          <div *ngIf="canApprovePO()" style="display: flex; align-items: center; justify-content: space-between; border: 1px solid #cbd5e1; border-radius: 8px; padding: 20px;">
+            <label class="approve-checkbox-row" style="display: flex; align-items: center; gap: 15px; cursor: pointer; flex: 1;" [style.pointer-events]="initiallyApproved ? 'none' : 'auto'" [style.opacity]="initiallyApproved ? '0.7' : '1'">
+              <div class="checkbox-container">
+                <input type="checkbox" name="is_approved" [(ngModel)]="po.is_approved" style="width: 20px; height: 20px;" [disabled]="initiallyApproved">
+              </div>
+              <div class="label-text">
+                <strong style="display: block; font-size: 15px; color: #1e293b;">Approve Purchase Order</strong>
+                <span style="display: block; font-size: 13px; color: #64748b; margin-top: 4px;">I have reviewed the items, vendor assignment, and terms. By checking this, I officially authorize this Purchase Order.</span>
+              </div>
+            </label>
+            <button *ngIf="!initiallyApproved" type="button" class="btn btn-primary" (click)="submitAndSendToVendor()" [disabled]="!po.is_approved || submitting" style="padding: 10px 24px; font-weight: 600; white-space: nowrap;">
+               <span *ngIf="!submitting">Submit & Send to Vendor</span>
+               <span *ngIf="submitting">Processing...</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </form>
+  </div>
+</div>

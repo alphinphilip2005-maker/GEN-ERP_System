@@ -1,0 +1,188 @@
+<div class="page-wrapper">
+  <div class="list-top-bar">
+    <div class="left-section">
+      <h1 class="page-title">Payment Details</h1>
+    </div>
+    <div class="right-section">
+      <div class="search-box">
+        <input type="text" placeholder="Search by PO No" class="form-control" [(ngModel)]="searchQuery">
+        <button class="search-btn">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-container white-card shadow-sm">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Sl No.</th>
+          <th>PO No</th>
+          <th class="text-right">Total Amt</th>
+          <th>Due date</th>
+          <th>Settlement Type</th>
+          <th class="text-right">Received Amt</th>
+          <th class="text-center">Payment</th>
+          <th class="text-right">Pending Amt</th>
+          <th class="text-center">Status</th>
+          <th class="text-center">History</th>
+          <th class="text-center">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of filteredPayments; let i = index">
+          <td>{{ (i + 1) | number:'2.0-0' }}</td>
+          <td class="font-bold text-primary">{{ p.PurchaseOrder?.po_no }}</td>
+          <td class="text-right font-semibold">₹{{ p.total_amount | number:'1.2-2' }}</td>
+          
+          <!-- Due Date (Read Only) -->
+          <td>{{ p.due_date ? (p.due_date | date:'dd/MM/yyyy') : '-' }}</td>
+          
+          <!-- Settlement Type (Read Only) -->
+          <td>{{ p.settlement_type || '-' }}</td>
+
+          <td class="text-right">₹{{ p.paid_amount | number:'1.2-2' }}</td>
+                 <td class="text-center">
+            <!-- Show Settle button ONLY if both parameters are present and there is a pending balance or status is not CLOSED -->
+            <button class="btn-settle" 
+                    (click)="openSettleModal(p)" 
+                    *ngIf="(p.status !== 'CLOSED' || (p.total_amount - p.paid_amount) > 0.01) && p.due_date && p.due_date !== 'null' && p.settlement_type && p.settlement_type !== 'null'">Settle</button>
+            
+            <!-- Show Warning Message if parameters are missing -->
+            <div class="param-warning" *ngIf="(p.status !== 'CLOSED' || (p.total_amount - p.paid_amount) > 0.01) && (!p.due_date || p.due_date === 'null' || !p.settlement_type || p.settlement_type === 'null')"
+                 (click)="openParamModal(p)"
+                 style="cursor: pointer; color: #b45309; display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 11px; font-weight: 600;"
+                 title="Click to set Due Date & Type">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#f59e0b" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <span>Set Parameters</span>
+            </div>
+
+            <span *ngIf="p.status === 'CLOSED' && (p.total_amount - p.paid_amount) <= 0.01" class="text-muted small">Completed</span>
+          </td>
+
+          <td class="text-right font-bold" [class.text-danger]="p.total_amount - p.paid_amount > 0">
+            ₹{{ (p.total_amount - p.paid_amount) | number:'1.2-2' }}
+          </td>
+
+          <td class="text-center">
+            <span class="status-pill" [ngClass]="p.status.toLowerCase()">{{ p.status }}</span>
+          </td>
+
+          <td class="text-center">
+            <button class="link-btn" (click)="viewHistory(p)">View details</button>
+          </td>
+
+          <td class="text-center">
+             <div class="final-actions" *ngIf="p.status !== 'CLOSED' || (p.total_amount - p.paid_amount) > 0.01">
+               <button class="icon-btn edit" 
+                       (click)="openParamModal(p)" 
+                       title="Edit Parameters" 
+                       *ngIf="p.due_date && p.due_date != 'null' && p.due_date != '' && p.settlement_type && p.settlement_type != 'null' && p.settlement_type != ''">
+                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+               </button>
+             </div>
+             <div class="final-actions" *ngIf="p.status === 'CLOSED' && (p.total_amount - p.paid_amount) <= 0.01">
+                <span class="text-success" title="Payment Completed">
+                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                </span>
+             </div>
+          </td>
+        </tr>
+        <tr *ngIf="filteredPayments.length === 0">
+          <td colspan="11" class="text-center py-10 text-muted">No payment records found.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Parameter Modal (Due Date / Settlement Type) -->
+<div class="modal-overlay" *ngIf="showParamModal">
+  <div class="modal-content" style="max-width: 400px;">
+    <div class="modal-header">
+      <h3>Set Payment Parameters</h3>
+      <button class="close-btn" (click)="showParamModal = false">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Due Date</label>
+        <input type="date" class="form-control" [(ngModel)]="paramForm.due_date">
+      </div>
+      <div class="form-group">
+        <label>Settlement Type</label>
+        <select class="form-control" [(ngModel)]="paramForm.settlement_type">
+          <option value="Credit">Credit</option>
+          <option value="Cash">Cash</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" (click)="showParamModal = false">Cancel</button>
+      <button class="btn btn-primary" (click)="submitParams()" [disabled]="!paramForm.due_date || !paramForm.settlement_type">Save Parameters</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" *ngIf="showSettleModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Settle Payment - {{ selectedPayment?.PurchaseOrder?.po_no }}</h3>
+      <button class="close-btn" (click)="showSettleModal = false">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Amount to Pay (Balance: ₹{{ (selectedPayment?.total_amount! - selectedPayment?.paid_amount!) | number:'1.2-2' }})</label>
+        <input type="number" class="form-control" [(ngModel)]="settlementForm.amount" [max]="selectedPayment?.total_amount! - selectedPayment?.paid_amount!">
+      </div>
+      <div class="form-group" *ngIf="selectedPayment?.settlement_type === 'Credit'">
+        <label>Reference No (Txn ID / Check #)</label>
+        <input type="text" class="form-control" [(ngModel)]="settlementForm.reference_no" placeholder="e.g. TRX998877">
+      </div>
+      <div class="form-group">
+        <label>Remarks</label>
+        <textarea class="form-control" [(ngModel)]="settlementForm.remarks"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" (click)="showSettleModal = false">Cancel</button>
+      <button class="btn btn-primary" (click)="submitSettlement()" [disabled]="!settlementForm.amount">Confirm Payment</button>
+    </div>
+  </div>
+</div>
+
+<!-- History Modal -->
+<div class="modal-overlay" *ngIf="showHistoryModal">
+  <div class="modal-content" style="max-width: 600px;">
+    <div class="modal-header">
+      <h3>Payment History - {{ selectedPayment?.PurchaseOrder?.po_no }}</h3>
+      <button class="close-btn" (click)="showHistoryModal = false">&times;</button>
+    </div>
+    <div class="modal-body">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Reference</th>
+            <th class="text-right">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let h of selectedPayment?.PaymentHistories">
+            <td>{{ h.payment_date | date:'dd/MM/yyyy' }}</td>
+            <td class="small">{{ h.reference_no || '-' }}</td>
+            <td class="text-right font-bold">₹{{ h.amount | number:'1.2-2' }}</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2" class="font-bold">Total Paid</td>
+            <td class="text-right font-bold text-success">₹{{ selectedPayment?.paid_amount | number:'1.2-2' }}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" (click)="showHistoryModal = false">Close</button>
+    </div>
+  </div>
+</div>

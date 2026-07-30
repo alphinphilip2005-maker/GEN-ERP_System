@@ -1,0 +1,217 @@
+<!-- Toast Notification (Top Right) -->
+<div class="toast-notification" *ngIf="toastMessage" [ngClass]="toastType">
+
+  <div class="toast-content">{{ toastMessage }}</div>
+  <button class="toast-close" (click)="toastMessage = null">×</button>
+</div>
+
+<!-- Loading State -->
+<div class="loading-wrapper" *ngIf="loading">
+  <div class="spinner"></div>
+  <p>Loading requisition details...</p>
+</div>
+
+<!-- Error State -->
+<div class="error-wrapper" *ngIf="!loading && error">
+
+  <h3>Failed to Load</h3>
+  <p>{{ error }}</p>
+  <button class="btn-primary" (click)="loadMrn()">Try Again</button>
+</div>
+
+<!-- Main Content -->
+<div class="page-container" *ngIf="!loading && mrn">
+
+  <!-- ── Header ── -->
+  <div class="header-card">
+    <div class="header-top">
+      <button class="btn-back" routerLink="/admin/mrn">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to MRN List
+      </button>
+      <div class="header-actions">
+        <button class="btn-danger"
+                *ngIf="mrn.status === 'Pending' && mrn.mrn_type !== 'Project_Transfer' && canDelete"
+                (click)="deleteMrn()">Delete</button>
+
+        <!-- Store MRN Approve -->
+        <button class="btn-primary"
+                *ngIf="mrn.status === 'Pending' && mrn.mrn_type !== 'Project_Transfer' && canApprove"
+                (click)="approveMrn()">
+          Approve
+        </button>
+
+        <!-- Transfer MRN Approve (visible to admin + project leads) -->
+        <button class="btn-primary btn-purple"
+                *ngIf="mrn.status === 'Pending' && mrn.mrn_type === 'Project_Transfer' && canApproveTransferBtn"
+                (click)="approveMrn()">
+          Approve Transfer
+        </button>
+
+        <!-- Issue Items (Store MRN) -->
+        <button class="btn-primary"
+                *ngIf="(mrn.status === 'Approved' || mrn.status === 'Partial') && mrn.mrn_type !== 'Project_Transfer' && canIssue"
+                [routerLink]="['/admin/mrn', mrn.id, 'fulfill']">
+          📦 Issue Items
+        </button>
+
+        <!-- Issue Items (Transfer MRN) -->
+        <button class="btn-primary btn-purple"
+                *ngIf="(mrn.status === 'Transfer_Approved' || mrn.status === 'Partial') && mrn.mrn_type === 'Project_Transfer' && canIssue"
+                [routerLink]="['/admin/mrn', mrn.id, 'fulfill']">
+          🔄 Issue Transfer
+        </button>
+      </div>
+    </div>
+
+    <div class="header-main">
+      <div>
+        <h1 class="page-title">{{ mrn.mrn_no }}</h1>
+        <div class="tag-row">
+          <span class="status-badge" [ngClass]="getStatusClass(mrn.status)">{{ mrn.status }}</span>
+          <span class="type-badge-detail" *ngIf="mrn.mrn_type === 'Project_Transfer'">🔄 Project Transfer</span>
+          <span class="type-badge-detail store" *ngIf="mrn.mrn_type !== 'Project_Transfer'">🏪 Store Issue</span>
+          <span class="priority-tag" *ngIf="mrn.remarks?.toLowerCase()?.includes('urgent')">🔴 URGENT</span>
+        </div>
+      </div>
+      <div class="slip-info" *ngIf="mrn.slip_no">
+        <span class="slip-label">Slip No.</span>
+        <span class="slip-val">{{ mrn.slip_no }}</span>
+      </div>
+    </div>
+
+    <!-- Info Grid -->
+    <div class="info-grid">
+      <div class="info-item">
+        <label>Requested By</label>
+        <span>{{ mrn.Requester?.name || '—' }}</span>
+      </div>
+      <div class="info-item">
+        <label>Department</label>
+        <span>{{ mrn.department || '—' }}</span>
+      </div>
+      <div class="info-item">
+        <label>Designation</label>
+        <span>{{ mrn.designation || mrn.Requester?.designation || '—' }}</span>
+      </div>
+      <div class="info-item">
+        <label>Request Date</label>
+        <span>{{ mrn.request_date | date:'dd MMM yyyy' }}</span>
+      </div>
+      <div class="info-item">
+        <label>Project</label>
+        <span *ngIf="mrn.mrn_type !== 'Project_Transfer'">{{ mrn.Project?.project_name || 'General Inventory' }}</span>
+        <span *ngIf="mrn.mrn_type === 'Project_Transfer'" class="transfer-route-detail">
+          <span class="route-from-d">{{ mrn.FromProject?.project_name || '—' }}</span>
+          <span class="route-arrow-d">→</span>
+          <span class="route-to-d">{{ mrn.ToProject?.project_name || '—' }}</span>
+        </span>
+      </div>
+
+      <div class="info-item">
+        <label>Approved By</label>
+        <span>{{ mrn.Approver?.name || mrn.supervisor_name || (mrn.status === 'Pending' ? 'Pending Approval' : '—') }}</span>
+      </div>
+      <div class="info-item">
+        <label>Store in Charge</label>
+        <span>{{ mrn.Issuer?.name || mrn.store_in_charge_name || (['Pending', 'Approved'].includes(mrn.status) ? 'Pending Issuance' : '—') }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="body-grid">
+
+    <!-- ── Items Table ── -->
+    <div class="card items-card">
+      <div class="card-hdr">
+        <h2>Requested Items</h2>
+        <span class="item-count">{{ mrn.MrnItems?.length || 0 }} item(s)</span>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Item</th>
+              <th>Code</th>
+              <th>Project Code</th>
+              <th>Spec</th>
+              <th>UOM</th>
+              <th>Requested</th>
+              <th>Issued</th>
+              <th>Fulfillment</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of mrn.MrnItems; let i = index">
+              <td class="idx">{{ i + 1 }}</td>
+              <td>
+                <div class="item-name">{{ item.Item?.item_name || '—' }}</div>
+              </td>
+              <td><span class="code-badge">{{ item.Item?.item_code || '—' }}</span></td>
+              <td class="text-muted">{{ item.product_id || '—' }}</td>
+              <td class="spec-cell">{{ item.specification || item.Item?.description || '—' }}</td>
+              <td>{{ item.uom }}</td>
+              <td><strong>{{ item.requested_quantity }}</strong></td>
+              <td>{{ item.issued_quantity || 0 }}</td>
+              <td>
+                <div class="progress-wrap">
+                  <div class="progress-bar">
+                    <div class="progress-fill"
+                         [style.width.%]="getFulfillmentPercent(item)"
+                         [ngClass]="{'full': getFulfillmentPercent(item) === 100, 'partial': getFulfillmentPercent(item) > 0 && getFulfillmentPercent(item) < 100}">
+                    </div>
+                  </div>
+                  <span class="pct">{{ getFulfillmentPercent(item) | number:'1.0-0' }}%</span>
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="!mrn.MrnItems || mrn.MrnItems.length === 0">
+              <td colspan="8" class="empty-row">No items found in this MRN.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Side Panel ── -->
+    <div class="side-panel">
+
+      <!-- Status Timeline -->
+      <div class="card timeline-card">
+        <h3>Status Timeline</h3>
+        <div class="timeline">
+          <div class="t-step" [ngClass]="{'done': true}">
+            <div class="t-dot done"></div>
+            <div class="t-info">
+              <span class="t-name">Created</span>
+              <span class="t-time">{{ mrn.created_at | date:'dd MMM, hh:mm a' }}</span>
+            </div>
+          </div>
+          <div class="t-step" [ngClass]="{'done': mrn.status !== 'Pending'}">
+            <div class="t-dot" [ngClass]="{'done': mrn.status !== 'Pending', 'active': mrn.status === 'Partial'}"></div>
+            <div class="t-info">
+              <span class="t-name">Processing</span>
+              <span class="t-time" *ngIf="mrn.status === 'Partial'">Partially Issued</span>
+              <span class="t-time pending" *ngIf="mrn.status === 'Pending'">Awaiting Store</span>
+            </div>
+          </div>
+          <div class="t-step" [ngClass]="{'done': mrn.status === 'Issued' || mrn.status === 'Fulfilled'}">
+            <div class="t-dot" [ngClass]="{'done': mrn.status === 'Issued' || mrn.status === 'Fulfilled'}"></div>
+            <div class="t-info">
+              <span class="t-name">Fully Issued</span>
+              <span class="t-time" *ngIf="mrn.status === 'Issued' || mrn.status === 'Fulfilled'">Completed ✓</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Remarks -->
+      <div class="card remarks-card" *ngIf="mrn.remarks">
+        <h3>Remarks</h3>
+        <p class="remarks-text">{{ mrn.remarks }}</p>
+      </div>
+
+    </div>
+  </div>
+</div>

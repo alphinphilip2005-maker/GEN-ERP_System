@@ -1,0 +1,130 @@
+.grn-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px 30px;
+}
+
+.info-box {
+  background: var(--bg-app);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.info-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.info-value {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.table-container {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fff;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.data-table th, .data-table td {
+  padding: 12px 14px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.data-table th {
+  background: var(--bg-app);
+  color: var(--text-secondary);
+  font-weight: 600;
+  border-right: 1px solid var(--border);
+}
+
+.data-table td {
+  color: var(--text-primary);
+  border-right: 1px solid var(--border);
+}
+
+.hover-row {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.hover-row:hover {
+  background-color: var(--primary-glow);
+}
+
+.selected-row {
+  background-color: var(--primary-glow);
+}
+
+.qc-panel {
+  background: var(--bg-app);
+  border-top: 1px solid #bfdbfe;
+  padding: 24px 30px;
+}
+
+.qc-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  font-size: 14px;
+}
+
+.qc-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.qc-info-line {
+  color: var(--text-primary);
+}
+.qc-info-line strong {
+  margin-right: 8px;
+  color: var(--text-secondary);
+}
+
+.qc-border-val {
+  border-bottom: 1px solid #94a3b8;
+  padding: 0 8px;
+  display: inline-block;
+  min-width: 40px;
+  text-align: center;
+}
+
+.qc-input-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+}
+
+.qc-actions {
+  margin-top: 30px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+@media(max-width: 900px) {
+  .qc-grid, .grn-form-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media(max-width: 500px) {
+  .qc-grid, .grn-form-grid {
+    grid-template-columns: 1fr;
+  }
+}

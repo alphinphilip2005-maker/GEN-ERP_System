@@ -1,0 +1,40 @@
+<h2>BOM Revision Logic: When to Increment?</h2>
+<p class="subtitle">Select the approach that best fits your workflow</p>
+
+<div class="options" data-choice="a" onclick="toggleSelect(this)">
+  <div class="option" data-choice="a">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Immediate Versioning (Current)</h3>
+      <p>Clicking "Release" immediately creates <strong>Revision 27</strong> as a Pending record.</p>
+      <div class="pros-cons">
+        <div class="pros"><ul><li>Clear visibility of the "Next" version.</li></ul></div>
+        <div class="cons"><ul><li>User feels the number has updated too early.</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Late Versioning (User Requested)</h3>
+      <p>Clicking "Release" creates a <strong>Pending Update</strong>. The number <strong>r27</strong> is only assigned when "Accept" is clicked.</p>
+      <div class="pros-cons">
+        <div class="pros"><ul><li>Header strictly stays at r26 until it's actually Approved.</li></ul></div>
+        <div class="cons"><ul><li>Drafts don't have a number, making them harder to track in history.</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Snapshot Versioning</h3>
+      <p>Release creates a "Candidate" (e.g. 26.1). Approval converts it to <strong>Revision 27</strong>.</p>
+      <div class="pros-cons">
+        <div class="pros"><ul><li>Maintains strict r26 header while giving the draft a unique ID.</li></ul></div>
+        <div class="cons"><ul><li>Adds more complexity to the numbering system.</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>

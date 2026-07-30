@@ -1,0 +1,28 @@
+<h2>When is the Number Assigned?</h2>
+<p class="subtitle">Comparison of numbering strategies during the "Pending" phase.</p>
+
+<div class="options" data-choice="a" onclick="toggleSelect(this)">
+  <div class="option" data-choice="a">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Inherit Current Number</h3>
+      <p>The pending record is named <strong>r26 (Pending)</strong>.</p>
+      <div class="pros-cons">
+        <div class="pros"><ul><li>Easy to see it's an update TO r26.</li><li>Sorting works naturally.</li></ul></div>
+        <div class="cons"><ul><li>Needs logic to "rename" the row during approval.</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>The "Candidate" Approach</h3>
+      <p>The record has NO number. It's just listed as <strong>"Proposed Change"</strong>.</p>
+      <div class="pros-cons">
+        <div class="pros"><ul><li>Pure logic: No r27 exists anywhere until it's Approved.</li></ul></div>
+        <div class="cons"><ul><li>Hard to refer to a specific draft if multiple exist.</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>

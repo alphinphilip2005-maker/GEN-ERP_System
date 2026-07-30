@@ -1,0 +1,453 @@
+<div class="page-container">
+  <!-- Header -->
+  <div class="header-section">
+    <div class="title-group">
+      <h1 class="page-title">Quotation Management</h1>
+    </div>
+    
+    <!-- Project Search Bar (Only visible in project view) -->
+    <div class="search-container" *ngIf="view === 'projects'">
+      <div class="search-wrapper">
+        <input type="text" [(ngModel)]="projectSearchQuery" placeholder="Search by code / item" class="search-input">
+        <button class="search-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Subtitle moved outside header to match PO layout -->
+  <div class="description-section" *ngIf="view === 'projects'">
+    <h3 class="grid-title">Select Project</h3>
+    <p class="grid-desc">Choose a project to view and manage its purchase requests.</p>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast-notification" [ngClass]="toastType" *ngIf="toastMessage">
+    {{ toastMessage }}
+  </div>
+
+  <!-- Loading State -->
+  <div class="loader-container" *ngIf="quotesLoading">
+    <div class="premium-loader"></div>
+    <p>Loading purchase requests...</p>
+  </div>
+
+  <!-- Error State -->
+  <div class="error-state" *ngIf="quotesError && !quotesLoading">
+    <p>{{ quotesError }}</p>
+    <button class="btn-retry" (click)="loadQuotes()">Retry</button>
+  </div>
+
+  <!-- PROJECT GRID VIEW -->
+  <div class="project-grid-view" *ngIf="!quotesLoading && !quotesError && view === 'projects'">
+
+
+    <!-- Empty State -->
+    <div class="quotes-empty-state" *ngIf="projectGroups.length === 0">
+      <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#cbd5e1" stroke-width="1.5">
+        <path d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/>
+      </svg>
+      <p>No active purchase requests found for procurement.</p>
+    </div>
+
+    <div class="pr-grid">
+      <div class="pr-card" *ngFor="let proj of getPaginatedProjects()" (click)="selectProject(proj)">
+        <div class="card-top">
+          <div class="pr-avatar project-icon">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          </div>
+          <div class="pr-info">
+            <div class="pr-title-row">
+              <span class="pr-number">{{ proj.name }}</span>
+            </div>
+            <div class="pr-details">
+              <span class="detail-row"><span class="detail-label">Project Code</span><span class="detail-sep">:</span><span class="detail-value">{{ proj.code }}</span></span>
+            </div>
+          </div>
+        </div>
+        <div class="proj-badge-count">
+          {{ proj.prCount }} {{ proj.prCount === 1 ? 'PR' : 'PRs' }}
+        </div>
+        <div class="card-action-indicator">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagination Controls for Projects -->
+    <div class="pagination-wrap" *ngIf="totalPages > 1">
+      <button class="btn-page" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="page-info">Page <strong>{{ currentPage }}</strong> of {{ totalPages }}</span>
+      <button class="btn-page" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── PR GRID VIEW ── -->
+  <div class="pr-grid-view" *ngIf="view === 'prs'">
+    <div class="view-navigation">
+      <button class="custom-back-btn" (click)="backToProjects()" title="Back to Projects">
+        <div class="back-icon-circle">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </div>
+        <span class="back-text">Back to Projects</span>
+      </button>
+
+      <div class="nav-actions-group">
+        <div class="pr-search-box">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" [(ngModel)]="prSearchQuery" (ngModelChange)="onPrSearch()" placeholder="Search PR Number or Requester...">
+        </div>
+
+        <!-- Compact Pagination ONLY -->
+        <div class="compact-pagination" *ngIf="totalPages > 1 || prSearchQuery">
+          <button class="btn-page-mini" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)" title="Previous">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <span class="page-indicator">Page <strong>{{ currentPage }}</strong> / {{ totalPages }}</span>
+          <button class="btn-page-mini" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)" title="Next">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="quotes-empty-state" *ngIf="getFilteredPrs().length === 0">
+      <p>No active PRs found for this project.</p>
+    </div>
+
+    <div class="pr-grid">
+      <div class="pr-card" *ngFor="let group of getFilteredPrs()" (click)="selectPr(group)">
+        <div class="card-top">
+          <div class="pr-avatar">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="white" stroke-width="1.5">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+          </div>
+          <div class="pr-info">
+            <div class="pr-title-row">
+              <span class="pr-number">{{ group.pr_no }}</span>
+              <span class="pr-status-badge" [ngClass]="'status-' + getPrQuotationStatus(group)">
+                {{ getPrQuotationStatus(group) === 'complete' ? 'Fully Quoted' : (getPrQuotationStatus(group) === 'partial' ? 'Partially Quoted' : (getPrQuotationStatus(group) === 'pending' ? 'Pending Review' : 'No Quotes')) }}
+              </span>
+            </div>
+            <div class="pr-details">
+              <span class="detail-row"><span class="detail-label">Project</span><span class="detail-sep">:</span><span class="detail-value">{{ selectedProject?.name }}</span></span>
+              <span class="detail-row"><span class="detail-label">Requested By</span><span class="detail-sep">:</span><span class="detail-value">{{ group.Requester?.name }}</span></span>
+            </div>
+          </div>
+        </div>
+        <div class="card-action-indicator">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PR DETAILS VIEW (Quotation Management) ── -->
+  <div class="pr-details-view" *ngIf="view === 'details' && selectedPr">
+    <div class="view-navigation">
+      <button class="custom-back-btn" (click)="backToPrs()" title="Back to PR List">
+        <div class="back-icon-circle">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </div>
+        <span class="back-text">Back to PR List</span>
+      </button>
+      <div class="nav-context">
+        <span class="context-label">PR Number:</span>
+        <span class="context-val">{{ selectedPr.pr_no }}</span>
+      </div>
+    </div>
+
+    <div class="details-content-layout">
+      <!-- PR Details Sidebar/Panel -->
+      <div class="pr-info-header-panel">
+        <div class="panel-section">
+          <h3 class="section-title">Request Information</h3>
+          <div class="info-grid-modern">
+            <div class="info-cell">
+              <label>Issued Date</label>
+              <span>{{ selectedPr.request_date | date:'dd MMM yyyy' }}</span>
+            </div>
+            <div class="info-cell">
+              <label>Requester Name</label>
+              <span>{{ selectedPr.Requester?.name }}</span>
+            </div>
+            <div class="info-cell">
+              <label>Designation</label>
+              <span>{{ selectedPr.designation || 'N/A' }}</span>
+            </div>
+            <div class="info-cell">
+              <label>Department</label>
+              <span>{{ selectedPr.department || 'N/A' }}</span>
+            </div>
+            <div class="info-cell" *ngIf="selectedPr.BomRevision">
+              <label>BOM Revision</label>
+              <span class="bom-badge">{{ selectedPr.BomRevision.revision_no }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Items & Quotes List -->
+      <div class="management-workspace">
+        <div class="workspace-header">
+          <h3>Quotation Management Items</h3>
+          <p>Review and award quotations for each requested item. (Showing {{ getPaginatedItems().length }} of {{ selectedPr.items.length }} items)</p>
+        </div>
+
+        <div class="item-card-full" *ngFor="let item of getPaginatedItems()">
+          <div class="item-summary-row">
+            <div class="item-main-info">
+              <h4 class="item-title">{{ item.name | uppercase }}</h4>
+              <div class="item-meta-tags">
+                <span class="meta-tag code">CODE: {{ item.item_code }}</span>
+                <span class="meta-tag qty">QTY: {{ item.quantity }} {{ item.uom }}</span>
+                <span class="status-marker awarded" *ngIf="isItemApproved(item)">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                  QUOTED
+                </span>
+              </div>
+              <div class="item-specs-modern">
+                <span class="specs-label">Specifications:</span>
+                <span class="specs-content">{{ item.specification }}</span>
+              </div>
+            </div>
+            <button *ngIf="canCreate" class="btn-primary-gradient" (click)="openQuotes(item)">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Record Quote
+            </button>
+          </div>
+
+          <div class="item-quotes-section">
+            <div class="no-quotes-msg" *ngIf="!item.quotes || item.quotes.length === 0">
+              No quotations recorded yet. Click "Record Quote" to begin procurement.
+            </div>
+
+            <div class="quotes-grid-workspace" *ngIf="item.quotes && item.quotes.length > 0">
+              <div class="quote-mini-card" *ngFor="let q of item.quotes" [class.is-approved]="q.status === 'Approved'">
+                <div class="qm-header">
+                  <div class="qm-vendor-grp">
+                    <div class="qm-vendor">{{ q.Vendor?.name }}</div>
+                  </div>
+                  <div class="qm-top-actions">
+                    <button class="btn-qm-view-mini" *ngIf="+q.price > 5000 && q.quote_url" (click)="viewQuoteFile(q.quote_url, $event)" title="View Quotation">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                      </svg>
+                    </button>
+                    <button *ngIf="canDelete" class="btn-qm-delete-mini" (click)="deleteQuote(q, $event)" title="Delete Quote">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
+                    <div class="qm-status-badge" *ngIf="q.status !== 'Pending'" [ngClass]="q.status?.toLowerCase()">{{ q.status | uppercase }}</div>
+                  </div>
+                </div>
+                <div class="qm-price">₹{{ q.price | number:'1.2-2' }}</div>
+                
+                <div class="qm-meta">
+                  <span>🚚 {{ q.delivery_time || 'N/A' }}</span>
+                </div>
+                
+                <!-- High-Value Attachment Alert/Button -->
+                <div class="attachment-action-row" *ngIf="+q.price > 5000">
+                  <button class="btn-view-attachment" [disabled]="!q.quote_url" (click)="viewQuoteFile(q.quote_url, $event)">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                    </svg>
+                    {{ q.quote_url ? 'View Quotation File' : 'Quotation File Missing' }}
+                  </button>
+                </div>
+                <div class="qm-actions">
+                  <ng-container *ngIf="q.status === 'Pending'">
+                    <button *ngIf="canApprove" class="btn-qm-approve" (click)="approveQuote(q, $event)" [disabled]="quoteActionLoading === q.id || isItemApproved(item)">Approve</button>
+                    <button *ngIf="canApprove" class="btn-qm-reject" (click)="rejectQuote(q, $event)" [disabled]="quoteActionLoading === q.id">Reject</button>
+                  </ng-container>
+                  <div class="final-status-text" *ngIf="q.status === 'Approved'">
+                    <span>Contract Quoted</span>
+                    <button *ngIf="canEdit" class="btn-undo" (click)="undoApproval(q, $event)" [disabled]="quoteActionLoading === q.id">Undo</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Item Pagination Controls -->
+        <div class="pagination-wrap" *ngIf="totalItemPages > 1">
+          <button class="btn-page" [disabled]="itemPage === 1" (click)="changeItemPage(itemPage - 1)">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <span class="page-info">Item Page <strong>{{ itemPage }}</strong> of {{ totalItemPages }}</span>
+          <button class="btn-page" [disabled]="itemPage === totalItemPages" (click)="changeItemPage(itemPage + 1)">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div> <!-- close compact-pagination? no, close pagination-wrap -->
+      </div> <!-- close management-workspace -->
+    </div> <!-- close details-content-layout -->
+  </div> <!-- close pr-details-view -->
+</div> <!-- close page-container -->
+
+  <!-- MANAGE QUOTES MODAL (Add / Import) -->
+  <div class="modal-overlay" *ngIf="showQuoteModal" (click)="closeQuotesModal()">
+    <div class="modal-box large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Manage Quotes: {{ activeItem?.name || activeItem?.item_name || activeItem?.custom_item_name }}</h3>
+        <button class="btn-close" (click)="closeQuotesModal()">✕</button>
+      </div>
+      
+      <div class="modal-body with-tabs">
+        <!-- Tabs removed as per request (Bulk Import removed) -->
+
+        <!-- Manual Entry Content -->
+        <div class="tab-content">
+          <div class="table-shell mini mb-4">
+            <table class="premium-table mini">
+              <thead>
+                <tr><th>Vendor</th><th>Price</th><th>Delivery</th><th>Status</th><th class="text-center">Action</th></tr>
+              </thead>
+              <tbody>
+                <tr *ngIf="itemQuotes.length === 0">
+                  <td colspan="4" class="text-center text-muted">No quotes recorded yet.</td>
+                </tr>
+                <tr *ngFor="let q of itemQuotes">
+                  <td class="val-bold">{{ q.Vendor?.name }}</td>
+                  <td class="val-price">₹{{ q.price | number:'1.2-2' }}</td>
+                  <td class="val-sub">{{ q.delivery_time }}</td>
+                  <td><span class="status-pill" [ngClass]="q.status?.toLowerCase()">{{ q.status }}</span></td>
+                  <td class="text-center">
+                    <div style="display: flex; justify-content: center; gap: 8px;">
+                      <button class="btn-icon-view" *ngIf="+q.price > 5000 && q.quote_url" (click)="viewQuoteFile(q.quote_url)" title="View Quotation">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                        </svg>
+                      </button>
+                      <button class="btn-icon-delete" (click)="deleteQuote(q)" title="Delete Quote">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="add-quote-section">
+            <h4 class="form-sub-title">Add New Vendor Quote</h4>
+            <div class="form-row align-end">
+              <div class="input-group flex-2">
+                <label>VENDOR <span class="req">*</span></label>
+                <select class="premium-select" [(ngModel)]="newQuote.vendor_id">
+                  <option value="">Select Vendor</option>
+                  <option *ngFor="let v of vendors" [value]="v.id">{{ v.name }}</option>
+                </select>
+              </div>
+              <div class="input-group flex-1">
+                <label>TOTAL PRICE (₹) <span class="req">*</span></label>
+                <input type="number" class="premium-input" [(ngModel)]="newQuote.price" placeholder="0.00">
+              </div>
+              <div class="input-group flex-1">
+                <label>DELIVERY</label>
+                <input type="text" class="premium-input" [(ngModel)]="newQuote.delivery_time" placeholder="e.g. 7 days">
+              </div>
+            </div>
+
+            <!-- Conditional Upload Field for Price > 5000 -->
+            <div class="upload-section-premium mt-4" *ngIf="newQuote.price && newQuote.price > 5000">
+              <div class="upload-info">
+                <h4 class="upload-title">Upload Official Quotation <span class="req">*</span></h4>
+                <p class="upload-desc">Required for amounts over ₹5,000. Supports PDF, Word, or Excel.</p>
+              </div>
+              <div class="file-drop-area" [class.has-file]="selectedQuoteFile">
+                <input type="file" id="quoteDoc" (change)="onQuoteFileSelected($event)" accept=".pdf,.doc,.docx,.xls,.xlsx" hidden>
+                <label for="quoteDoc" class="file-label">
+                  <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  <span>{{ selectedQuoteFile ? selectedQuoteFile.name : 'Choose File or Drag & Drop' }}</span>
+                </label>
+                <button class="btn-clear" *ngIf="selectedQuoteFile" (click)="selectedQuoteFile = null; $event.stopPropagation()">✕</button>
+              </div>
+            </div>
+
+            <div class="form-actions mt-4">
+              <button class="btn-primary-gradient w-100" (click)="saveQuote()" [disabled]="savingQuote">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                {{ savingQuote ? 'Saving...' : 'Add Quotation Record' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Excel Import Tab Removed -->
+      </div>
+      
+
+    </div>
+  </div>
+
+  <!-- DUPLICATE QUOTE WARNING POPUP -->
+  <div class="modal-overlay alert-modal" *ngIf="showDuplicateModal">
+    <div class="modal-card mini-alert">
+      <div class="alert-icon-wrap warn">
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <h2>Duplicate Quotation</h2>
+      <p>{{ duplicateErrorMessage }}</p>
+      <div class="modal-footer centered">
+        <button class="btn-primary-gradient" (click)="closeDuplicateModal()">Understood</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmation Modal (Approval/Rejection/Delete) -->
+  <div class="modal-overlay" *ngIf="showConfirmModal">
+    <div class="confirm-modal">
+      <div class="modal-icon" [class.approval]="isApprovalAction" [class.delete]="isDeleteAction">
+        <svg *ngIf="isApprovalAction && !isDeleteAction" viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        <svg *ngIf="!isApprovalAction && !isDeleteAction" viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+        </svg>
+        <svg *ngIf="isDeleteAction" viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
+        </svg>
+      </div>
+      
+      <div class="modal-content">
+        <h3 *ngIf="!isDeleteAction">{{ isApprovalAction ? 'Confirm Quote Approval' : 'Confirm Quote Rejection' }}</h3>
+        <h3 *ngIf="isDeleteAction">Confirm Quote Deletion</h3>
+
+        <p *ngIf="isApprovalAction && !isDeleteAction">
+          Are you sure you want to approve the quotation from <strong>{{ quoteToApprove?.Vendor?.name }}</strong> for <strong>₹{{ quoteToApprove?.price | number:'1.2-2' }}</strong>?
+          <br><br>
+          <span class="warning-note">Note: Approving this will lock the item and prevent other vendors from being selected.</span>
+        </p>
+        <p *ngIf="!isApprovalAction && !isDeleteAction">
+          Are you sure you want to reject the quotation from <strong>{{ quoteToReject?.Vendor?.name }}</strong>?
+        </p>
+        <p *ngIf="isDeleteAction">
+          Are you sure you want to permanently delete the quotation <strong>#{{ quoteToDelete?.quote_no }}</strong> from <strong>{{ quoteToDelete?.Vendor?.name }}</strong>?
+          <br><br>
+          <span class="danger-note">This action cannot be undone and will remove all associated documents.</span>
+        </p>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="cancelAction()">Go Back</button>
+        <button class="btn-confirm" [class.btn-danger]="!isApprovalAction || isDeleteAction" (click)="confirmAction()" [disabled]="quoteActionLoading">
+          {{ quoteActionLoading ? 'Processing...' : (isDeleteAction ? 'Yes, Delete' : (isApprovalAction ? 'Yes, Approve' : 'Yes, Reject')) }}
+        </button>
+      </div>
+    </div>
+  </div>

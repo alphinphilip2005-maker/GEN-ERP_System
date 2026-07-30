@@ -1,0 +1,189 @@
+<div class="page-container">
+  <div class="header-section">
+    <div class="header-content">
+      <div class="title-group">
+        <h1 class="page-title">Inventory Overview</h1>
+        <p class="page-subtitle">Track real-time stock levels, categorize materials, and perform manual adjustments.</p>
+      </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="toolbar" style="display: flex; gap: 15px; align-items: center;">
+      <div class="search-wrapper" style="flex: 1;">
+        <svg class="search-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <input type="text" placeholder="Search by code / item" [(ngModel)]="searchQuery" (input)="filterStock()">
+      </div>
+      
+      <div class="filter-wrapper" style="display: flex; gap: 10px;">
+        <select [(ngModel)]="locationFilter" (change)="filterStock()" style="height: 48px; border-radius: 24px; border: 1px solid #cbd5e1; padding: 0 20px; font-size: 1rem; color: #475569; outline: none; background: white; cursor: pointer;">
+          <option value="">All Warehouses</option>
+          <option *ngFor="let loc of uniqueLocations" [value]="loc">{{ loc }}</option>
+        </select>
+        <select [(ngModel)]="projectFilter" (change)="filterStock()" style="height: 48px; border-radius: 24px; border: 1px solid #cbd5e1; padding: 0 20px; font-size: 1rem; color: #475569; outline: none; background: white; cursor: pointer;">
+          <option value="">All Projects</option>
+          <option *ngFor="let prj of uniqueProjects" [value]="prj">{{ prj }}</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loader-container" *ngIf="loading">
+    <div class="premium-loader"></div>
+    <p>Loading inventory data...</p>
+  </div>
+
+  <!-- Error State -->
+  <div class="error-container" *ngIf="error && !loading">
+    <h3>Data retrieval failed</h3>
+    <p>{{ error }}</p>
+    <button class="btn-retry" (click)="loadStock()">Try Again</button>
+  </div>
+
+  <!-- Inventory Groups (Grouped by Category) -->
+  <div class="inventory-container" *ngIf="!loading && !error">
+    
+    <div class="empty-state" *ngIf="paginatedStocks.length === 0">
+      <div class="empty-icon-box">
+        <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="#cbd5e1" stroke-width="1.5">
+          <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+        </svg>
+      </div>
+      <h3>No Inventory Records</h3>
+      <p>No items match your current search criteria.</p>
+    </div>
+
+    <div *ngIf="paginatedStocks.length > 0" style="background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow: hidden; margin-top: 20px;">
+      <!-- Inventory Pagination (Moved to Top) -->
+      <div class="pagination-controls" *ngIf="totalPages > 1" style="display: flex; justify-content: flex-end; align-items: center; padding: 15px 24px; border-bottom: 1px solid #e2e8f0; gap: 15px;">
+        <button class="btn btn-secondary" [disabled]="currentPage === 1" (click)="prevPage()" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; cursor: pointer; display: flex; align-items: center;">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <span style="font-size: 13px; font-weight: 600; color: #475569;">Page {{ currentPage }} of {{ totalPages }}</span>
+        <button class="btn btn-secondary" [disabled]="currentPage === totalPages" (click)="nextPage()" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; cursor: pointer; display: flex; align-items: center;">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+      <table class="data-table">
+        <thead style="background: #e2e8f0; border-bottom: 2px solid #cbd5e1;">
+          <tr>
+            <th style="width: 50px; text-align: center; font-weight: 700; color: #334155; padding: 15px 16px;">No</th>
+            <th style="font-weight: 700; color: #334155; padding: 15px 16px;">Item</th>
+            <th style="font-weight: 700; color: #334155; padding: 15px 16px;">Item ID</th>
+            <th style="font-weight: 700; color: #334155; padding: 15px 16px;">Item Spec</th>
+            <th style="font-weight: 700; color: #334155; padding: 15px 16px;">Category</th>
+            <th style="font-weight: 700; color: #334155; padding: 15px 16px;">Project</th>
+            <th style="font-weight: 700; color: #334155; padding: 15px 16px;">Location</th>
+            <th style="font-weight: 700; color: #334155; padding: 15px 16px;">Available</th>
+            <th style="font-weight: 700; color: #334155; padding: 15px 16px;">Good Stock</th>
+            <th style="font-weight: 700; color: #334155; padding: 15px 16px;">Bad Stock</th>
+            <th style="font-weight: 700; color: #334155; padding: 15px 16px; text-align: center;">History</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let s of paginatedStocks; let i = index" [style.background]="i % 2 === 0 ? '#ffffff' : '#f8fafc'" style="border-bottom: 1px solid #e2e8f0;">
+            <td style="color: #64748b; font-weight: 500; text-align: center; padding: 15px 16px;">{{ (currentPage - 1) * itemsPerPage + i + 1 }}</td>
+            <td style="font-weight: 600; color: #1e293b; padding: 15px 16px;">{{ s.Item?.item_name || 'Unknown Item' }}</td>
+            <td style="color: #475569; padding: 15px 16px;">{{ s.Item?.item_code || 'N/A' }}</td>
+            <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #475569; padding: 15px 16px;" [title]="s.Item?.description || ''">{{ s.Item?.description || 'N/A' }}</td>
+            <td style="color: #475569; padding: 15px 16px;">{{ s.Item?.category || 'Uncategorized' }}</td>
+            <td style="color: #475569; padding: 15px 16px;">{{ $any(s).project_name || 'N/A' }}</td>
+            <td style="color: #475569; padding: 15px 16px;">{{ s.location || 'Main Store' }}</td>
+            <td style="color: #1e293b; font-weight: 600; padding: 15px 16px;">{{ (getDisplayQuantity(s.quantity) * 1) + (getDisplayQuantity(s.bad_quantity) * 1) }}</td>
+            <td style="color: #16a34a; font-weight: 600; padding: 15px 16px;">{{ getDisplayQuantity(s.quantity) }}</td>
+            <td style="color: #ef4444; font-weight: 600; padding: 15px 16px;">{{ getDisplayQuantity(s.bad_quantity) }}</td>
+            <td style="text-align: center; padding: 15px 16px;">
+              <button class="btn-view-history" (click)="viewHistory(s)" title="View History" style="background: none; border: none; cursor: pointer; color: #3b82f6; display: inline-flex; align-items: center; justify-content: center; outline: none; transition: transform 0.2s;">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<!-- Premium History Modal -->
+<div class="modal-overlay" *ngIf="showHistoryModal" (click)="closeHistoryModal()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title-group">
+        <h2>Item History</h2>
+        <p>{{ selectedItemName }} ({{ selectedItemCode }})</p>
+      </div>
+      <button class="btn-close-modal" (click)="closeHistoryModal()">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div *ngIf="loadingHistory" style="text-align: center; padding: 40px 0;">
+        <div class="premium-loader" style="width: 40px; height: 40px; border: 4px solid #f1f5f9; border-top: 4px solid #2563eb; border-radius: 50%; margin: 0 auto 20px; animation: spin 1s linear infinite;"></div>
+        <p style="color: #64748b; margin-top: 15px; font-weight: 500;">Fetching item history logs...</p>
+      </div>
+
+      <div *ngIf="!loadingHistory && historyEntries.length === 0" class="history-empty">
+        <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#cbd5e1" stroke-width="2" style="margin-bottom: 16px;">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+        <p style="font-size: 16px; font-weight: 600; color: #475569; margin: 0 0 4px 0;">No history records found</p>
+        <p style="font-size: 13px; color: #94a3b8; margin: 0;">This item has no recorded addition/transfer activities.</p>
+      </div>
+
+      <table class="history-table" *ngIf="!loadingHistory && historyEntries.length > 0" style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr>
+            <th>Date & Time</th>
+            <th>Quantity Added</th>
+            <th>Source Type</th>
+            <th>Reference</th>
+            <th>Movement Details</th>
+            <th>Authorized By</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let h of historyEntries">
+            <td>{{ h.created_at | date:'medium' }}</td>
+            <td style="font-weight: 600; color: #1e293b;">+{{ h.quantity }}</td>
+            <td>
+              <span [ngClass]="{'badge-pr': h.type === 'PR_Flow', 'badge-transfer': h.type === 'Project_Transfer', 'badge-mrl': h.type === 'Material_Rejection'}">
+                <svg *ngIf="h.type === 'PR_Flow'" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+                </svg>
+                <svg *ngIf="h.type === 'Project_Transfer'" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+                  <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+                </svg>
+                <svg *ngIf="h.type === 'Material_Rejection'" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+                  <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+                </svg>
+                {{ h.type === 'PR_Flow' ? 'PR Flow' : (h.type === 'Project_Transfer' ? 'Project Transfer' : 'Rejection Log') }}
+              </span>
+            </td>
+            <td style="font-family: monospace; font-weight: 600; color: #475569;">{{ h.source_reference || 'N/A' }}</td>
+            <td>
+              <span *ngIf="h.type === 'PR_Flow'" style="color: #64748b;">
+                Added to <strong>{{ h.to_project || 'General Project' }}</strong>
+              </span>
+              <span *ngIf="h.type === 'Project_Transfer'" style="color: #64748b; font-size: 13px;">
+                From: <strong>{{ h.from_project }}</strong> → To: <strong>{{ h.to_project }}</strong>
+              </span>
+              <span *ngIf="h.type === 'Material_Rejection'" style="color: #e11d48; font-weight: 500;">
+                {{ h.movement_details }} Logged
+              </span>
+            </td>
+            <td style="color: #475569; font-weight: 500;">{{ h.user_name || 'System' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

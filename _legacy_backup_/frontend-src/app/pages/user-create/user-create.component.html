@@ -1,0 +1,111 @@
+<div class="create-container">
+  
+  <div class="create-header">
+    <div class="header-left">
+      <h2 class="title">Add user</h2>
+    </div>
+    <div class="header-right">
+      <button class="btn-rights" type="button" (click)="openRightsModal()">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        Add User Rights
+      </button>
+    </div>
+  </div>
+
+  <form (ngSubmit)="onRegister()" #registerForm="ngForm" class="create-form">
+    
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Name <span class="text-danger">*</span></label>
+        <input type="text" name="name" [(ngModel)]="userData.name" placeholder="Enter the Name" required>
+      </div>
+
+      <div class="form-group">
+        <label>Employee ID <span class="text-danger">*</span></label>
+        <input type="text" name="empId" [(ngModel)]="userData.employeeId" placeholder="Enter Employee ID" required>
+      </div>
+
+      <div class="form-group">
+        <label>Email ID <span class="text-danger">*</span></label>
+        <input type="email" name="email" [(ngModel)]="userData.email" placeholder="Enter the Email id" required>
+      </div>
+
+      <div class="form-group">
+        <label>Phone Number <span class="text-danger">*</span></label>
+        <input type="text" name="phone" [(ngModel)]="userData.phoneNumber" placeholder="Enter Phone Number" required>
+      </div>
+
+      <div class="form-group">
+        <label>Designation <span class="text-danger">*</span></label>
+        <div class="select-wrapper">
+          <select name="designation" [(ngModel)]="userData.designation" required>
+            <option value="" disabled selected>Select Designation</option>
+            <option value="Manager">Manager</option>
+            <option value="Team Lead">Team Lead</option>
+            <option value="Engineer">Engineer</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Department <span class="text-danger">*</span></label>
+        <div class="select-wrapper">
+          <select name="department" [(ngModel)]="userData.department" required>
+            <option value="" disabled selected>Select Department</option>
+            <option value="IT">IT</option>
+            <option value="HR">HR</option>
+            <option value="Sales">Sales</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Password <span class="text-danger">*</span></label>
+        <input type="password" name="password" [(ngModel)]="userData.password" placeholder="Enter Password" required>
+      </div>
+
+      <div class="form-group">
+        <label>Confirm Password <span class="text-danger">*</span></label>
+        <input type="password" name="confirmPassword" [(ngModel)]="userData.confirmPassword" placeholder="Re-enter the Password" required>
+      </div>
+
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn-register" [disabled]="!registerForm.valid">
+        Register
+      </button>
+    </div>
+
+  </form>
+
+</div>
+
+<!-- User Rights Modal -->
+<div class="modal-overlay" *ngIf="showRightsModal">
+  <div class="modal-content">
+    
+    <div class="modal-header">
+      <h3 class="modal-title">User Rights</h3>
+      <button class="close-btn" (click)="closeRightsModal()">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="rights-grid">
+        <div class="right-item" *ngFor="let right of rightsList; let i = index">
+          <label class="custom-checkbox">
+            <input type="checkbox" name="right_{{i}}" [(ngModel)]="right.selected">
+            <span class="checkmark"></span>
+            {{ right.name }}
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="closeRightsModal()">Cancel</button>
+      <button class="btn-submit" (click)="submitRights()">Save Rights</button>
+    </div>
+
+  </div>
+</div>

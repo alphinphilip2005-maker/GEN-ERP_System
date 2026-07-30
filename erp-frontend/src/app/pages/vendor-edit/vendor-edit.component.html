@@ -1,0 +1,161 @@
+<div class="page-wrapper">
+  <div class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Edit Vendor</h1>
+      <p class="page-subtitle">Update supplier profile and contact details.</p>
+    </div>
+    <div class="header-right">
+      <button class="btn btn-outline" routerLink="/admin/vendors">
+        Back to Vendors
+      </button>
+    </div>
+  </div>
+
+  <div class="alert-success" *ngIf="success">{{ success }}</div>
+  <div class="alert-error" *ngIf="error">{{ error }}</div>
+
+  <div class="loading-state" *ngIf="loading && !error">
+    <p>Loading vendor details...</p>
+  </div>
+
+  <div class="card form-card" *ngIf="!loading || error">
+    <div class="card-header">
+      <h3>Vendor Details</h3>
+    </div>
+    <form (ngSubmit)="onSubmit()" #vendorForm="ngForm" class="form-content">
+      
+      <h4 class="section-title">Basic Information</h4>
+      <div class="form-group-row">
+        <div class="form-group">
+          <label class="form-label">Vendor Code <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" name="vendor_code" [(ngModel)]="vendor.vendor_code" (blur)="checkCode()" placeholder="e.g. VEN-001" required>
+          <div class="text-danger small mt-1" *ngIf="codeExists">
+            Duplicate Vendor Code found.
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Vendor Name <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" name="name" [(ngModel)]="vendor.name" (blur)="capitalizeWords('name')" (keypress)="allowLettersOnly($event)" placeholder="e.g. Acme Corp" required>
+        </div>
+      </div>
+
+      <div class="form-group-row">
+        <div class="form-group">
+          <label class="form-label">GST Number</label>
+          <input type="text" class="form-control" name="gst_number" [(ngModel)]="vendor.gst_number" placeholder="22AAAAA0000A1Z5">
+        </div>
+        <div class="form-group">
+          <label class="form-label">PAN Number</label>
+          <input type="text" class="form-control" name="pan" [(ngModel)]="vendor.pan" pattern="^[A-Z]{5}[0-9]{4}[A-Z]{1}$" maxlength="10" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()" placeholder="ABCDE1234F">
+          <div class="text-danger small mt-1" *ngIf="vendorForm.controls['pan']?.invalid && (vendorForm.controls['pan']?.dirty || vendorForm.controls['pan']?.touched)">
+            Invalid PAN format (e.g., ABCDE1234F).
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group-row">
+        <div class="form-group">
+          <label class="form-label">MSME Registration</label>
+          <input type="text" class="form-control" name="msme" [(ngModel)]="vendor.msme" placeholder="Optional">
+        </div>
+        <div class="form-group"></div>
+      </div>
+
+      <h4 class="section-title">Address Information</h4>
+      <div class="form-group">
+        <label class="form-label">Street Address</label>
+        <input type="text" class="form-control" name="street" [(ngModel)]="vendor.street" (blur)="capitalizeWords('street')" placeholder="123 Industrial Area">
+      </div>
+
+      <div class="form-group-row">
+        <div class="form-group">
+          <label class="form-label">City</label>
+          <input type="text" class="form-control" name="city" [(ngModel)]="vendor.city" (blur)="capitalizeWords('city')" placeholder="Mumbai">
+        </div>
+        <div class="form-group">
+          <label class="form-label">State</label>
+          <input type="text" class="form-control" name="state" [(ngModel)]="vendor.state" (blur)="capitalizeWords('state')" placeholder="Maharashtra">
+        </div>
+      </div>
+
+      <div class="form-group-row">
+        <div class="form-group">
+          <label class="form-label">Country</label>
+          <input type="text" class="form-control" name="country" [(ngModel)]="vendor.country" (blur)="capitalizeWords('country')" placeholder="India">
+        </div>
+        <div class="form-group">
+          <label class="form-label">PIN Code</label>
+          <input type="text" class="form-control" name="pin" [(ngModel)]="vendor.pin" maxlength="6" (keypress)="allowNumbersOnly($event)" placeholder="400001">
+        </div>
+      </div>
+
+      <h4 class="section-title">Contact Information</h4>
+      <div class="form-group-row">
+        <div class="form-group">
+          <label class="form-label">Contact Person</label>
+          <input type="text" class="form-control" name="contact_person" [(ngModel)]="vendor.contact_person" (blur)="capitalizeWords('contact_person')" (keypress)="allowLettersOnly($event)" placeholder="John Doe">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone Number <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" name="phone" [(ngModel)]="vendor.phone" maxlength="10" 
+                 oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)" 
+                 placeholder="e.g. 9876543210" required>
+        </div>
+      </div>
+
+      <div class="form-group-row">
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input type="email" class="form-control" name="email" [(ngModel)]="vendor.email" pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$" placeholder="john@example.com">
+          <div class="text-danger small mt-1" *ngIf="vendorForm.controls['email']?.invalid && (vendorForm.controls['email']?.dirty || vendorForm.controls['email']?.touched)">
+            Invalid email format.
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Other Contact Details</label>
+          <input type="text" class="form-control" name="contact_details" [(ngModel)]="vendor.contact_details" placeholder="Skype, WhatsApp etc.">
+        </div>
+      </div>
+
+      <h4 class="section-title">Bank Details</h4>
+      <div class="form-group-row">
+        <div class="form-group">
+          <label class="form-label">Account Holder Name</label>
+          <input type="text" class="form-control" name="account_name" [(ngModel)]="vendor.account_name" (blur)="capitalizeWords('account_name')" placeholder="Enter name as per bank records">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Bank Name</label>
+          <input type="text" class="form-control" name="bank_name" [(ngModel)]="vendor.bank_name" placeholder="e.g. HDFC Bank">
+        </div>
+      </div>
+
+      <div class="form-group-row">
+        <div class="form-group">
+          <label class="form-label">Account Number</label>
+          <input type="text" class="form-control" name="account_number" [(ngModel)]="vendor.account_number" 
+                 oninput="this.value = this.value.replace(/[^0-9]/g, '')" 
+                 placeholder="Enter Account Number">
+        </div>
+        <div class="form-group">
+          <label class="form-label">IFSC Code</label>
+          <input type="text" class="form-control" name="ifsc_code" [(ngModel)]="vendor.ifsc_code" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()" placeholder="e.g. HDFC0001234">
+        </div>
+      </div>
+
+      <div class="form-group-row">
+        <div class="form-group">
+          <label class="form-label">Branch Name</label>
+          <input type="text" class="form-control" name="branch_name" [(ngModel)]="vendor.branch_name" placeholder="e.g. Mumbai Main Branch">
+        </div>
+        <div class="form-group"></div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary" [disabled]="!vendorForm.valid || submitting || codeExists">
+          <span *ngIf="!submitting">Update Vendor</span>
+          <span *ngIf="submitting">Updating...</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,109 @@
+<div class="page-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <button class="btn-back" (click)="goBack()">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="title-wrap">
+        <h1>Purchase Quotation Analysis</h1>
+        <p>Comparative view of all vendor responses for PR: <strong>{{ pr?.pr_no }}</strong></p>
+      </div>
+    </div>
+    <div class="header-actions" *ngIf="pr">
+      <div class="status-indicator" [ngClass]="getPrQuotationStatus()">
+        {{ getPrQuotationStatus() === 'complete' ? 'FULLY AWARDED' : (getPrQuotationStatus() === 'partial' ? 'PARTIALLY AWARDED' : 'UNDER REVIEW') }}
+      </div>
+    </div>
+  </div>
+
+  <div class="loading-overlay" *ngIf="loading">
+    <div class="loader"></div>
+    <p>Loading analysis data...</p>
+  </div>
+
+  <div class="content-shell" *ngIf="!loading && pr">
+    <!-- PR Summary Strip -->
+    <div class="summary-strip">
+      <div class="strip-item">
+        <label>PROJECT</label>
+        <div class="val">{{ pr.Project?.project_name }}</div>
+      </div>
+      <div class="strip-item">
+        <label>PROJECT CODE</label>
+        <div class="val">{{ pr.Project?.project_code }}</div>
+      </div>
+      <div class="strip-item">
+        <label>REQUESTER</label>
+        <div class="val">{{ pr.Requester?.name }}</div>
+      </div>
+      <div class="strip-item">
+        <label>DEPARTMENT</label>
+        <div class="val">{{ pr.department }}</div>
+      </div>
+      <div class="strip-item">
+        <label>DATE CREATED</label>
+        <div class="val">{{ pr.created_at | date:'mediumDate' }}</div>
+      </div>
+    </div>
+
+    <!-- Analysis Table -->
+    <div class="table-card">
+      <div class="card-header">
+        <h2>Detailed Vendor Comparisons</h2>
+        <div class="item-count">{{ pr.PurchaseRequestItems?.length }} Items Analyzed</div>
+      </div>
+
+      <div class="table-scroll">
+        <table class="analysis-table">
+          <thead>
+            <tr>
+              <th>ITEM DESCRIPTION</th>
+              <th>VENDOR NAME</th>
+              <th class="text-right">QUOTED PRICE</th>
+              <th>AWARD STATUS</th>
+              <th>EST. DELIVERY</th>
+              <th>REMARKS</th>
+            </tr>
+          </thead>
+          <tbody>
+          <ng-container *ngFor="let group of analysisItems">
+            <tr class="item-header-row">
+              <td colspan="6">
+                <div class="item-header-info">
+                  <span class="item-tag">ITEM</span>
+                  <span class="item-name-bold">{{ group.itemName }}</span>
+                  <span class="item-meta">Code: {{ group.itemCode }}</span>
+                  <span class="item-meta">Qty: {{ group.quantity }} {{ group.uom }}</span>
+                </div>
+              </td>
+            </tr>
+            <tr *ngFor="let quote of group.quotes" [class.row-awarded]="quote.isAwarded">
+              <td><!-- Spacer --></td>
+              <td>
+                <div class="vendor-cell">
+                  <span class="vendor-name">{{ quote.vendorName }}</span>
+                </div>
+              </td>
+              <td class="text-right">
+                <div class="price-cell">₹{{ quote.price | number:'1.2-2' }}</div>
+              </td>
+              <td>
+                <span class="status-badge" [ngClass]="quote.status.toLowerCase()">
+                  {{ quote.status === 'Approved' ? 'AWARDED' : quote.status }}
+                </span>
+              </td>
+              <td>
+                <div class="delivery-cell">{{ quote.delivery || 'N/A' }}</div>
+              </td>
+              <td>
+                <div class="remarks-cell">-</div>
+              </td>
+            </tr>
+          </ng-container>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

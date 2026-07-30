@@ -1,0 +1,120 @@
+<div class="page-wrapper" *ngIf="grnData">
+  <div class="card">
+    
+    <div class="modal-header" style="display: flex; align-items: center; gap: 15px; justify-content: flex-start;">
+      <a [routerLink]="['/admin/grn']" [queryParams]="{project: grnData.PurchaseOrder?.PurchaseRequest?.Project?.project_name || grnData.PurchaseOrder?.project_name}" class="btn btn-ghost" style="padding: 6px; display: flex; align-items: center; justify-content: center; color: #64748b; text-decoration: none; border-radius: 4px;">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </a>
+      <h2 class="page-title text-primary" style="margin: 0;">GRN Details</h2>
+    </div>
+
+    <div class="modal-body pb-0">
+      
+      <!-- Top Form -->
+      <div class="grn-form-grid">
+        <div class="info-box">
+          <label class="info-label text-primary">GRN No.</label>
+          <p class="info-value">{{ grnData.grn_no }}</p>
+        </div>
+
+        <div class="info-box">
+          <label class="info-label text-primary">PO Number</label>
+          <p class="info-value">{{ grnData.PurchaseOrder?.po_no }}</p>
+        </div>
+
+        <div class="info-box">
+          <label class="info-label text-primary">PR Reference Number</label>
+          <p class="info-value">{{ grnData.PurchaseOrder?.PurchaseRequest?.pr_no || 'N/A' }}</p>
+        </div>
+
+        <div class="info-box">
+          <label class="info-label text-primary">Vendor Name</label>
+          <p class="info-value">{{ grnData.PurchaseOrder?.ToVendor?.name || 'N/A' }}</p>
+        </div>
+
+        <div class="info-box">
+          <label class="info-label text-primary">PO Date</label>
+          <p class="info-value">{{ grnData.PurchaseOrder?.po_date | date:'dd/MM/yyyy' }}</p>
+        </div>
+
+        <div class="info-box">
+          <label class="info-label text-primary">GRN Date</label>
+          <p class="info-value">{{ grnData.grn_date | date:'dd/MM/yyyy' }}</p>
+        </div>
+
+        <div class="info-box">
+          <label class="info-label text-primary">GRN Location</label>
+          <p class="info-value">{{ grnData.warehouse }}</p>
+        </div>
+
+        <div class="info-box">
+          <label class="info-label text-primary">Project ID</label>
+          <p class="info-value">{{ grnData.PurchaseOrder?.PurchaseRequest?.Project?.project_code || 'N/A' }}</p>
+        </div>
+
+        <div class="info-box">
+          <label class="info-label text-primary">Project Name</label>
+          <p class="info-value">{{ grnData.PurchaseOrder?.PurchaseRequest?.Project?.project_name || 'N/A' }}</p>
+        </div>
+
+
+      </div>
+
+      <!-- Items Table -->
+      <!-- Pagination Top Bar -->
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 0 6px;">
+        <span style="font-size:13px; font-weight:600; color:#64748b;">
+          Page {{ viewPage }} of {{ totalViewPages > 0 ? totalViewPages : 1 }}
+        </span>
+        <div style="display:flex; gap:6px;">
+          <button (click)="viewPage = viewPage - 1" [disabled]="viewPage === 1"
+                  style="width:32px; height:32px; display:flex; align-items:center; justify-content:center; border:1.5px solid #e2e8f0; border-radius:8px; background:white; cursor:pointer; transition:all 0.2s;"
+                  [style.opacity]="viewPage === 1 ? '0.35' : '1'">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#475569" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <button (click)="viewPage = viewPage + 1" [disabled]="viewPage === totalViewPages"
+                  style="width:32px; height:32px; display:flex; align-items:center; justify-content:center; border:1.5px solid #e2e8f0; border-radius:8px; background:white; cursor:pointer; transition:all 0.2s;"
+                  [style.opacity]="viewPage === totalViewPages ? '0.35' : '1'">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#475569" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="table-container mb-4">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Sl No.</th>
+              <th>Item Name</th>
+              <th>Item code</th>
+              <th>UOM</th>
+              <th>PO Qty</th>
+              <th>Received Qty</th>
+              <th>Remarks</th>
+              <th>Invoice/Bill</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of paginatedViewItems; let i = index" class="hover-row">
+              <td>{{ getViewGlobalIndex(i) }}</td>
+              <td style="font-weight:700">{{ item.Item?.item_name || 'Item '+(i+1) }}</td>
+              <td>{{ item.Item?.item_code || 'A101' }}</td>
+              <td style="font-weight:600; text-align:center;">{{ item.Item?.uom || 'Nos' }}</td>
+              <td style="text-align:center;">{{ item.ordered_qty }}</td>
+              <td style="text-align:center;">{{ item.received_qty }}</td>
+              <td style="font-size:12px; max-width:150px; white-space:normal;">{{ item.remarks || '-' }}</td>
+              <td>
+                <button (click)="$event.stopPropagation(); openFile(item.bill_url)"
+                        [disabled]="!item.bill_url"
+                        class="btn btn-ghost"
+                        style="padding:4px 8px; font-size:12px;">
+                  {{ item.bill_url ? '📄 View Bill' : 'No Bill' }}
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
